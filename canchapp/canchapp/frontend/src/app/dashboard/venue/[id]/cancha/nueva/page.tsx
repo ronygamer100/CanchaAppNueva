@@ -5,7 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import type { Venue, Court } from '@/lib/types';
-import AmenitiesPicker from '@/components/AmenitiesPicker';
 
 export default function NuevaCanchaPage() {
   const router = useRouter();
@@ -19,7 +18,6 @@ export default function NuevaCanchaPage() {
     tipo: '',
     precio_hora: 60,
     adelanto_monto: 20,
-    amenities: [] as string[],
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,7 +63,7 @@ export default function NuevaCanchaPage() {
       const cs = await apiFetch<Court[]>(`/api/venues/${venueId}/courts`, { auth: true });
       setExisting(cs);
       const next = String.fromCharCode(65 + cs.length);
-      setForm({ nombre: `Cancha ${next}`, tipo: '', precio_hora: 60, adelanto_monto: 20 , amenities: [] });
+      setForm({ nombre: `Cancha ${next}`, tipo: '', precio_hora: 60, adelanto_monto: 20 });
     } catch (err) {
       setError((err as Error).message);
     } finally { setLoading(false); }
@@ -132,11 +130,6 @@ export default function NuevaCanchaPage() {
               <p className="text-xs text-ink/50 mt-1">Por hora reservada.</p>
             </div>
           </div>
-
-          <AmenitiesPicker
-            selected={form.amenities}
-            onChange={(a) => setForm((f) => ({ ...f, amenities: a }))}
-          />
 
           {error && <p className="text-clay text-sm font-medium">{error}</p>}
 

@@ -257,6 +257,15 @@ function ReservationRow({ r, faded = false }: { r: PlayerReservation; faded?: bo
               {r.horas}h · S/ {r.monto_total}
             </span>
           </div>
+          {r.created_at && (
+            <p className="text-[10px] font-mono text-ink/40 mt-1">
+              Reservado el {new Date(r.created_at).toLocaleDateString('es-PE', {
+                day: 'numeric', month: 'short', year: 'numeric',
+              })} a las {new Date(r.created_at).toLocaleTimeString('es-PE', {
+                hour: '2-digit', minute: '2-digit',
+              })}
+            </p>
+          )}
         </div>
         <div className="p-4 flex flex-row sm:flex-col items-center sm:items-end justify-center gap-2 border-t-2 sm:border-t-0 sm:border-l-2 border-ink/10">
           <Link

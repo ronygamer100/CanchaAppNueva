@@ -51,6 +51,7 @@ class PlayerReservationOut(BaseModel):
     venue_slug: str
     court_nombre: str
     court_id: int
+    created_at: Optional[datetime] = None
 
 
 @router.get("/me", response_model=PlayerOut)
@@ -114,5 +115,6 @@ def list_my_reservations(
             venue_slug=venue.slug,
             court_nombre=court.nombre,
             court_id=court.id,
+            created_at=r.created_at,
         ))
     return out

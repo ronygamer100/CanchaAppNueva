@@ -60,6 +60,7 @@ export interface PlayerReservation {
   venue_slug: string;
   court_nombre: string;
   court_id: number;
+  created_at?: string;
 }
 
 export interface VenuePublic extends Venue {

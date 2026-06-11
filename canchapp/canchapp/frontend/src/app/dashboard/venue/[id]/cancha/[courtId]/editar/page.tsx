@@ -5,7 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import type { Court } from '@/lib/types';
-import AmenitiesPicker from '@/components/AmenitiesPicker';
 
 export default function EditarCanchaPage() {
   const router = useRouter();
@@ -15,7 +14,7 @@ export default function EditarCanchaPage() {
   const [court, setCourt] = useState<Court | null>(null);
   const [form, setForm] = useState<{
     nombre: string; tipo: string; precio_hora: number;
-    adelanto_monto: number; activa: number; amenities: string[];
+    adelanto_monto: number; activa: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +29,6 @@ export default function EditarCanchaPage() {
           nombre: c.nombre, tipo: c.tipo || '',
           precio_hora: c.precio_hora, adelanto_monto: c.adelanto_monto,
           activa: c.activa,
-          amenities: c.amenities || [],
         });
       })
       .catch((e) => setError(e.message));
@@ -130,11 +128,6 @@ export default function EditarCanchaPage() {
               </p>
             </div>
           </div>
-
-          <AmenitiesPicker
-            selected={form.amenities}
-            onChange={(a) => update('amenities', a)}
-          />
 
           {error && <p className="text-clay text-sm font-medium">{error}</p>}
 
