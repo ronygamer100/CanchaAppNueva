@@ -183,30 +183,45 @@ export default function ExplorarPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex items-baseline justify-between flex-wrap gap-4 mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
           <div>
-            <p className="eyebrow mb-2">Explorar</p>
-            <h1 className="display-lg">Encuentra tu cancha perfecta</h1>
+            <p className="eyebrow mb-1">Explorar</p>
+            <h1 className="text-2xl sm:text-4xl font-display font-bold">Tu cancha perfecta</h1>
           </div>
 
-          <div className="flex border-2 border-ink">
+          <div className="flex items-center gap-2">
+            {/* Botón filtros mobile */}
             <button
-              onClick={() => setVista('lista')}
-              className={`px-4 py-2 text-sm font-medium ${
-                vista === 'lista' ? 'bg-ink text-cream' : 'bg-cream hover:bg-ink/5'
-              }`}
+              type="button"
+              onClick={() => setShowFiltersMobile(true)}
+              className="lg:hidden flex items-center gap-2 border-2 border-ink bg-cream px-3 py-2 text-sm font-medium"
             >
-              Lista
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                <line x1="4" y1="6" x2="20" y2="6" /><line x1="7" y1="12" x2="20" y2="12" />
+                <line x1="10" y1="18" x2="20" y2="18" />
+              </svg>
+              Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
             </button>
-            <button
-              onClick={() => setVista('mapa')}
-              className={`px-4 py-2 text-sm font-medium border-l-2 border-ink ${
-                vista === 'mapa' ? 'bg-ink text-cream' : 'bg-cream hover:bg-ink/5'
-              }`}
-            >
-              Mapa
-            </button>
+
+            <div className="flex border-2 border-ink">
+              <button
+                onClick={() => setVista('lista')}
+                className={`px-3 py-2 text-sm font-medium ${
+                  vista === 'lista' ? 'bg-ink text-cream' : 'bg-cream hover:bg-ink/5'
+                }`}
+              >
+                Lista
+              </button>
+              <button
+                onClick={() => setVista('mapa')}
+                className={`px-3 py-2 text-sm font-medium border-l-2 border-ink ${
+                  vista === 'mapa' ? 'bg-ink text-cream' : 'bg-cream hover:bg-ink/5'
+                }`}
+              >
+                Mapa
+              </button>
+            </div>
           </div>
         </div>
 
@@ -367,20 +382,20 @@ export default function ExplorarPage() {
 
               <div>
                 <label className="label-field">Debe tener</label>
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-3 sm:grid-cols-2 gap-1.5">
                   {AMENITIES.map((a) => {
                     const on = amenitiesReq.includes(a.slug);
                     return (
                       <button
                         key={a.slug}
                         onClick={() => toggleAmenity(a.slug)}
-                        className={`text-[10px] border p-1.5 flex flex-col items-center gap-1 transition-colors ${
+                        className={`text-[10px] border p-2 flex flex-col items-center gap-1 transition-colors ${
                           on ? 'bg-ink text-cream border-ink' : 'border-ink/15 hover:border-ink'
                         }`}
                         title={a.label}
                       >
-                        <div className="w-4 h-4">{a.icon}</div>
-                        <span className="leading-tight text-center">{a.label.split(' ')[0]}</span>
+                        <div className="w-5 h-5">{a.icon}</div>
+                        <span className="leading-tight text-center line-clamp-2">{a.label}</span>
                       </button>
                     );
                   })}

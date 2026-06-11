@@ -454,94 +454,73 @@ function ReservationCard({
   onCancel?: () => void;
 }) {
   const info = courtMap.get(r.court_id);
+  const yapeUrl = r.yape_screenshot_url
+    ? (r.yape_screenshot_url.startsWith('http') ? r.yape_screenshot_url : `${API_URL}${r.yape_screenshot_url}`)
+    : null;
 
   return (
     <article className="card-brut !p-0 overflow-hidden">
-      <div className={compact ? 'grid grid-cols-1 gap-0' : 'grid md:grid-cols-12 gap-0'}>
-        <div className={`bg-ink text-cream p-4 ${compact ? '' : 'md:col-span-3 flex flex-col justify-center'}`}>
-          <div className="flex items-baseline justify-between gap-3">
-            <div>
-              <p className="font-mono text-pitch-400 text-xs uppercase tracking-widest">
-                {formatFecha(r.fecha)}
-              </p>
-              <p className="font-display text-3xl mt-1 leading-none">
-                {r.hora_inicio.slice(0, 5)}
-              </p>
-              <p className="text-cream/50 text-sm font-mono mt-1">
-                → {r.hora_fin.slice(0, 5)}
-              </p>
-            </div>
-            {compact && info && (
-              <p className="font-mono text-xs text-cream/60 text-right max-w-[60%] truncate">
-                {info.venue.nombre} · {info.court.nombre}
-              </p>
-            )}
+      {/* Header: fecha + hora + estado — una sola fila en móvil */}
+      <div className="bg-ink text-cream px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="font-mono text-pitch-400 text-[10px] uppercase tracking-widest leading-none">
+              {formatFecha(r.fecha)}
+            </p>
+            <p className="font-display text-2xl leading-tight">
+              {r.hora_inicio.slice(0, 5)}
+              <span className="text-cream/50 text-sm font-mono ml-2">→ {r.hora_fin.slice(0, 5)}</span>
+            </p>
           </div>
         </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border ${statusStyle[r.estado]}`}>
+            {r.estado}
+          </span>
+          {yapeUrl && (
+            <a href={yapeUrl} target="_blank"
+              className="border border-cream/30 px-2 py-1 text-[10px] font-mono hover:bg-cream/10">
+              Yape ↗
+            </a>
+          )}
+        </div>
+      </div>
 
-        <div className={`p-4 ${compact ? '' : 'md:col-span-5'}`}>
-          <p className="eyebrow mb-1">Jugador</p>
-          <p className="font-semibold">{r.jugador_nombre}</p>
-          <p className="font-mono text-sm text-ink/60 mt-1">{r.jugador_whatsapp}</p>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className={`text-xs font-mono uppercase tracking-wider px-2 py-0.5 border ${statusStyle[r.estado]}`}>
-              {r.estado}
-            </span>
-            <span className="text-xs font-mono text-ink/50" title={new Date(r.created_at).toLocaleString('es-PE')}>
-              reservó {formatRelativeTime(r.created_at)}
-            </span>
-          </div>
+      {/* Cuerpo: jugador + acciones */}
+      <div className="p-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          {compact && info && (
+            <p className="text-[10px] font-mono text-ink/50 mb-1 truncate">
+              {info.venue.nombre} · {info.court.nombre}
+            </p>
+          )}
+          <p className="font-semibold leading-tight truncate">{r.jugador_nombre}</p>
+          <p className="font-mono text-xs text-ink/60 mt-0.5">{r.jugador_whatsapp}</p>
+          <p className="text-[10px] font-mono text-ink/40 mt-1"
+            title={new Date(r.created_at).toLocaleString('es-PE')}>
+            reservó {formatRelativeTime(r.created_at)}
+          </p>
         </div>
 
-        {!compact && (
-          <div className="md:col-span-2 p-4 border-l-2 border-ink/10">
-            <p className="eyebrow mb-1">Yape</p>
-            {r.yape_screenshot_url ? (
-              <a
-                href={r.yape_screenshot_url.startsWith('http') ? r.yape_screenshot_url : `${API_URL}${r.yape_screenshot_url}`}
-                target="_blank"
-                className="block w-full h-20 bg-ink/5 border border-ink/20 overflow-hidden hover:border-ink"
-              >
-                <img
-                  src={r.yape_screenshot_url.startsWith('http') ? r.yape_screenshot_url : `${API_URL}${r.yape_screenshot_url}`}
-                  alt="captura"
-                  className="w-full h-full object-cover"
-                />
-              </a>
-            ) : (
-              <p className="text-ink/40 text-sm font-mono">sin captura</p>
-            )}
-          </div>
-        )}
-
-        <div className={`p-4 ${compact ? 'border-t-2 border-ink/10' : 'md:col-span-2 border-l-2 border-ink/10'} flex ${compact ? 'flex-row gap-2' : 'flex-col gap-2'} justify-center`}>
+        {/* Botones de acción — columna en móvil */}
+        <div className="flex flex-col gap-1.5 shrink-0">
           {r.estado === 'pendiente' ? (
             <>
-              {compact && r.yape_screenshot_url && (
-                <a
-                  href={r.yape_screenshot_url.startsWith('http') ? r.yape_screenshot_url : `${API_URL}${r.yape_screenshot_url}`}
-                  target="_blank"
-                  className="text-xs underline text-ink/70 hover:text-ink py-2"
-                >
-                  Ver Yape
-                </a>
-              )}
-              <button onClick={onConfirm} className="btn-accent !py-2 !px-3 text-sm flex-1">
-                Confirmar
+              <button onClick={onConfirm}
+                className="btn-accent !py-2 !px-3 text-xs whitespace-nowrap">
+                ✓ Confirmar
               </button>
-              <button onClick={onReject} className="text-sm text-ink/60 hover:text-clay py-2 px-2">
+              <button onClick={onReject}
+                className="border border-ink/20 text-xs py-2 px-3 hover:border-clay hover:text-clay whitespace-nowrap">
                 Rechazar
               </button>
             </>
           ) : r.estado === 'confirmada' && onCancel ? (
-            <button onClick={onCancel} className="text-xs text-clay hover:underline font-medium">
-              Cancelar reserva
+            <button onClick={onCancel}
+              className="text-[10px] text-clay hover:underline font-medium border border-clay/30 px-2 py-1">
+              Cancelar
             </button>
-          ) : (
-            <span className="text-xs text-ink/40 text-center font-mono">
-              {new Date(r.created_at).toLocaleDateString('es-PE')}
-            </span>
-          )}
+          ) : null}
         </div>
       </div>
     </article>

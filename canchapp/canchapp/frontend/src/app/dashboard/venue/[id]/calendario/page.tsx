@@ -232,8 +232,11 @@ export default function CalendarioPage() {
         {loading && <p className="font-mono text-xs text-ink/50 mb-3">Cargando…</p>}
 
         {/* Grilla del calendario */}
-        <div className="border-2 border-ink overflow-x-auto bg-cream">
-          <div className="min-w-[800px]">
+        <div className="border-2 border-ink overflow-x-auto bg-cream -mx-2 sm:mx-0">
+          <p className="sm:hidden text-xs font-mono text-ink/40 px-3 py-2 bg-ink/5 border-b border-ink/10">
+            ← Desliza para ver toda la semana
+          </p>
+          <div className="min-w-[640px]">
             {/* Header de días */}
             <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b-2 border-ink bg-ink text-cream">
               <div className="p-2 text-xs font-mono">HORA</div>

@@ -168,60 +168,115 @@ export default function VenuePublicPage() {
   }
 
   if (success) {
-    const cancelUrl = `${window.location.origin}/r/${success.cancel_token}`;
     const esAuto = success.modo_confirmacion === 'auto';
     const autoAt = success.auto_confirm_at ? new Date(success.auto_confirm_at) : null;
+    const cancelUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${success.cancel_token}`;
+
     return (
-      <main className="min-h-screen grid place-items-center px-6 py-12">
-        <div className="text-center max-w-lg w-full">
-          <div className={`inline-block px-4 py-1 font-mono text-sm mb-6 border-2 border-ink ${
+      <main className="min-h-screen bg-pitch-900 text-cream flex flex-col">
+        {/* Header */}
+        <div className="px-6 pt-8 pb-6 text-center">
+          {/* Ícono de éxito animado */}
+          <div className="w-20 h-20 mx-auto mb-6 bg-pitch-400 border-4 border-pitch-400 flex items-center justify-center">
+            <svg viewBox="0 0 40 40" fill="none" className="w-10 h-10">
+              <path d="M8 20L17 29L32 12" stroke="#0A0A0A" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h1 className="font-display text-4xl font-bold mb-2">
+            ¡Reserva enviada!
+          </h1>
+          <p className="text-cream/70 text-lg">
+            {nombre.split(' ')[0]}, tu cancha está separada.
+          </p>
+        </div>
+
+        {/* Card de estado */}
+        <div className="flex-1 bg-cream text-ink rounded-t-3xl px-6 pt-8 pb-safe">
+          {/* Estado actual */}
+          <div className={`border-2 border-ink p-4 mb-6 flex items-center gap-4 ${
             esAuto ? 'bg-pitch-100' : 'bg-pitch-400'
           }`}>
-            {esAuto ? 'RESERVA EN ESPERA' : 'RESERVA ENVIADA'}
-          </div>
-          <h1 className="display-lg mb-4">¡Listo, {nombre.split(' ')[0]}!</h1>
-          {esAuto && autoAt ? (
-            <>
-              <p className="text-ink/80 text-lg mb-2">
-                Tu cancha está separada.
-              </p>
-              <p className="text-ink/60 mb-8">
-                {venue.owner_nombre_negocio} tiene hasta las{' '}
-                <span className="font-mono font-semibold">
-                  {autoAt.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
-                </span>{' '}
-                para confirmar manualmente. Si no responde, tu reserva queda confirmada
-                automáticamente.
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-ink/80 text-lg mb-2">
-                Tu reserva está pendiente de confirmación.
-              </p>
-              <p className="text-ink/60 mb-8">
-                {venue.owner_nombre_negocio} te contactará por WhatsApp al{' '}
-                <span className="font-mono">{whatsapp}</span> en minutos.
-              </p>
-            </>
-          )}
-          <div className="card-brut bg-cream text-left mb-6">
-            <p className="eyebrow mb-2">Guarda este link</p>
-            <p className="text-sm text-ink/70 mb-3">
-              Úsalo para consultar el estado o cancelar (hasta 2h antes).
-            </p>
-            <div className="flex items-center gap-2 bg-ink/5 border-2 border-ink/20 px-3 py-2">
-              <span className="font-mono text-xs truncate flex-1">{cancelUrl}</span>
-              <button onClick={() => navigator.clipboard.writeText(cancelUrl)}
-                className="bg-ink text-cream font-mono text-xs px-2 py-1 hover:bg-pitch-900">copiar</button>
+            <div className="w-10 h-10 bg-ink text-pitch-400 flex items-center justify-center shrink-0 font-mono text-lg">
+              {esAuto ? '⏱' : '📋'}
             </div>
-            <a href={`https://wa.me/?text=${encodeURIComponent(`Mi reserva en ${venue.nombre}: ${cancelUrl}`)}`}
-              target="_blank"
-              className="block mt-3 text-sm font-medium text-pitch-700 hover:underline">
-              Enviármelo por WhatsApp →
-            </a>
+            <div>
+              <p className="font-bold">
+                {esAuto ? 'Pendiente de confirmación' : 'Pendiente de confirmación'}
+              </p>
+              <p className="text-sm text-ink/70">
+                {esAuto && autoAt
+                  ? `Se confirma sola a las ${autoAt.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })} si el dueño no actúa`
+                  : `${venue.owner_nombre_negocio} confirmará pronto`}
+              </p>
+            </div>
           </div>
-          <a href="/" className="btn-ghost">Volver al inicio</a>
+
+          {/* Detalle de la reserva */}
+          <div className="border-2 border-ink/10 mb-6">
+            <div className="bg-ink text-cream px-4 py-2">
+              <p className="eyebrow text-pitch-400">Tu reserva</p>
+            </div>
+            <div className="divide-y divide-ink/10">
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-ink/60 text-sm">Local</span>
+                <span className="font-semibold text-right max-w-[60%] truncate">{venue.nombre}</span>
+              </div>
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-ink/60 text-sm">Cancha</span>
+                <span className="font-semibold">{selectedCourt?.nombre}</span>
+              </div>
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-ink/60 text-sm">Fecha</span>
+                <span className="font-mono font-semibold">
+                  {new Date(success.fecha + 'T00:00:00').toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'long' })}
+                </span>
+              </div>
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-ink/60 text-sm">Hora</span>
+                <span className="font-mono font-semibold">
+                  {success.hora_inicio.slice(0,5)} – {success.hora_fin.slice(0,5)}
+                </span>
+              </div>
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-ink/60 text-sm">Tu WhatsApp</span>
+                <span className="font-mono text-sm">{whatsapp}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Acciones */}
+          <div className="space-y-3 mb-6">
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Mi reserva en ${venue.nombre}: ${cancelUrl}`)}`}
+              target="_blank"
+              className="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white font-semibold py-3 px-4 border-2 border-[#1da851]"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.523 5.851L.054 23.496c-.073.285.018.588.239.779A.995.995 0 0 0 1 24.5l5.795-1.517A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818c-1.88 0-3.63-.5-5.14-1.374l-.37-.218-3.812.999 1.016-3.712-.24-.382A9.817 9.817 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818S17.43 21.818 12 21.818z"/>
+              </svg>
+              Guardar por WhatsApp
+            </a>
+
+            <button
+              onClick={() => navigator.clipboard.writeText(cancelUrl).then(() => alert('¡Copiado!'))}
+              className="w-full border-2 border-ink py-3 px-4 font-medium hover:bg-ink/5 flex items-center justify-center gap-2"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              Copiar link de seguimiento
+            </button>
+          </div>
+
+          {/* Nota informativa */}
+          <div className="bg-ink/5 border border-ink/10 p-4 text-sm text-ink/60 mb-6">
+            <p>📱 Guarda el link de arriba. Con él puedes consultar el estado de tu reserva o cancelarla (hasta 2h antes del partido).</p>
+          </div>
+
+          <a href={`/c/${slug}`} className="block text-center text-sm text-ink/50 hover:text-ink underline">
+            Reservar otra hora
+          </a>
         </div>
       </main>
     );
