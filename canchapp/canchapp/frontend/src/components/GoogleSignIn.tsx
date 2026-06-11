@@ -92,7 +92,6 @@ function loadGoogleScript(): Promise<void> {
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
-    }
     script.defer = true;
     script.onload = () => resolve();
     script.onerror = () => reject(new Error('No se pudo cargar Google Sign-In'));
