@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: canchapp_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: canchapp
+      POSTGRES_PASSWORD: canchapp
+      POSTGRES_DB: canchapp
+    ports:
+      - "5433:5432"
+    volumes:
+      - canchapp_pgdata:/var/lib/postgresql/data
+
+volumes:
+  canchapp_pgdata:

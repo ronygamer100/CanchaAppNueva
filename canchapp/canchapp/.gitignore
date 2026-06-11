@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+
+# Variables de entorno (NUNCA subir credenciales a Git)
+.env
+.env.local
+
+# Subidas de usuarios (no son código)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
