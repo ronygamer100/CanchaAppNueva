@@ -57,6 +57,8 @@ export default function ExplorarPage() {
 
   // Vista
   const [vista, setVista] = useState<Vista>('lista');
+  // Drawer de filtros en mobile
+  const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
   // Geolocalización
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
@@ -209,15 +211,64 @@ export default function ExplorarPage() {
         </div>
 
         <div className="grid lg:grid-cols-[300px_1fr] gap-6">
-          {/* SIDEBAR FILTROS */}
-          <aside className="card-brut bg-cream lg:sticky lg:top-24 lg:self-start">
+          {/* Botón filtros (solo mobile) */}
+          <button
+            type="button"
+            onClick={() => setShowFiltersMobile(true)}
+            className="lg:hidden flex items-center justify-between border-2 border-ink bg-cream p-3 font-medium hover:bg-ink/5"
+          >
+            <span className="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="7" y1="12" x2="20" y2="12" />
+                <line x1="10" y1="18" x2="20" y2="18" />
+                <circle cx="6" cy="12" r="1" fill="currentColor" />
+                <circle cx="9" cy="18" r="1" fill="currentColor" />
+              </svg>
+              Filtros
+            </span>
+            {activeFiltersCount > 0 && (
+              <span className="bg-pitch-400 border border-ink px-2 py-0.5 text-xs font-mono">
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
+
+          {/* SIDEBAR FILTROS — visible en lg+; en mobile aparece como drawer overlay */}
+          {showFiltersMobile && (
+            <div
+              className="lg:hidden fixed inset-0 bg-ink/50 z-40"
+              onClick={() => setShowFiltersMobile(false)}
+            />
+          )}
+          <aside className={`
+            card-brut bg-cream
+            ${showFiltersMobile
+              ? 'fixed inset-x-0 bottom-0 top-12 z-50 overflow-y-auto !rounded-none !border-t-2 !border-x-0 !border-b-0'
+              : 'hidden'
+            }
+            lg:!relative lg:!inset-auto lg:block lg:sticky lg:top-24 lg:self-start lg:!border-2
+          `}>
             <div className="flex items-center justify-between mb-4">
               <p className="eyebrow">Filtros</p>
-              {activeFiltersCount > 0 && (
-                <button onClick={resetFilters} className="text-xs underline text-ink/60 hover:text-ink">
-                  Limpiar ({activeFiltersCount})
+              <div className="flex items-center gap-3">
+                {activeFiltersCount > 0 && (
+                  <button onClick={resetFilters} className="text-xs underline text-ink/60 hover:text-ink">
+                    Limpiar ({activeFiltersCount})
+                  </button>
+                )}
+                {/* Botón cerrar solo en mobile */}
+                <button
+                  onClick={() => setShowFiltersMobile(false)}
+                  className="lg:hidden text-ink/60 hover:text-ink"
+                  aria-label="Cerrar filtros"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </button>
-              )}
+              </div>
             </div>
 
             <div className="space-y-5">
@@ -336,6 +387,14 @@ export default function ExplorarPage() {
                 </div>
               </div>
             </div>
+
+            {/* Footer del drawer mobile: aplicar y cerrar */}
+            <button
+              onClick={() => setShowFiltersMobile(false)}
+              className="lg:hidden btn-accent w-full mt-6"
+            >
+              Ver {venues.length} resultado{venues.length === 1 ? '' : 's'}
+            </button>
           </aside>
 
           {/* RESULTADOS */}
