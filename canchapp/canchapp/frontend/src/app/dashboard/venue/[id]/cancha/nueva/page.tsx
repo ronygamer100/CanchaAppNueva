@@ -65,7 +65,7 @@ export default function NuevaCanchaPage() {
       const cs = await apiFetch<Court[]>(`/api/venues/${venueId}/courts`, { auth: true });
       setExisting(cs);
       const next = String.fromCharCode(65 + cs.length);
-      setForm({ nombre: `Cancha ${next}`, tipo: '', precio_hora: 60, adelanto_monto: 20 });
+      setForm({ nombre: `Cancha ${next}`, tipo: '', precio_hora: 60, adelanto_monto: 20 , amenities: [] });
     } catch (err) {
       setError((err as Error).message);
     } finally { setLoading(false); }
