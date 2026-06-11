@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch, API_URL } from '@/lib/api';
+import { showToast } from '@/components/Toast';
 import type { Venue } from '@/lib/types';
 import { DISTRITOS_AREQUIPA } from '@/lib/distritos';
 import MapPicker, { AREQUIPA_CENTER } from '@/components/MapPicker';
@@ -83,6 +84,7 @@ export default function EditarVenuePage() {
         }));
       }
       await Promise.all(uploads);
+      showToast('Negocio actualizado correctamente');
       router.push('/dashboard');
     } catch (err) {
       setError((err as Error).message);

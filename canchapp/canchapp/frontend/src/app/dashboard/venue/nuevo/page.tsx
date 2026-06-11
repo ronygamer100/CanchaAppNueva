@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import type { Venue } from '@/lib/types';
 import { DISTRITOS_AREQUIPA } from '@/lib/distritos';
+import { showToast } from '@/components/Toast';
 import MapPicker, { AREQUIPA_CENTER } from '@/components/MapPicker';
 import ConfirmationModePicker from '@/components/ConfirmationModePicker';
 import AmenitiesPicker from '@/components/AmenitiesPicker';
@@ -66,7 +67,7 @@ export default function NuevoVenuePage() {
         }));
       }
       await Promise.all(uploads);
-      // Redirige a agregar la primera cancha
+      showToast('¡Negocio creado! Ahora agrega tu primera cancha.');
       router.push(`/dashboard/venue/${venue.id}/cancha/nueva`);
     } catch (err) {
       setError((err as Error).message);
@@ -104,18 +105,28 @@ export default function NuevoVenuePage() {
             <div className="md:col-span-2">
               <label className="label-field">URL pública</label>
               <div className="flex items-center border-2 border-ink/20 focus-within:border-ink">
-                <span className="px-3 text-ink/50 font-mono text-sm bg-ink/5 py-3 border-r-2 border-ink/20">
+                <span className="px-3 text-ink/50 font-mono text-sm bg-ink/5 py-3 border-r-2 border-ink/20 whitespace-nowrap">
                   cancha.pe/c/
                 </span>
                 <input
                   required value={form.slug}
                   onChange={(e) => update('slug', slugify(e.target.value))}
-                  placeholder="los-olivos"
-                  className="flex-1 px-3 py-3 bg-cream font-mono text-sm focus:outline-none"
+                  placeholder="mis-canchas"
+                  className="flex-1 px-3 py-3 bg-cream font-mono text-sm focus:outline-none min-w-0"
                   pattern="[a-z0-9-]+"
                 />
               </div>
-              <p className="text-xs text-ink/50 mt-1">Este es el link que compartirás en redes.</p>
+              <p className="text-xs text-ink/50 mt-1">
+                {form.slug
+                  ? <>Se generó automáticamente del nombre. Puedes editarlo.</>
+                  : <>Se genera automáticamente al escribir el nombre.</>
+                }
+              </p>
+              {form.slug && (
+                <p className="text-xs font-mono text-pitch-700 mt-1">
+                  Preview: cancha.pe/c/{form.slug}
+                </p>
+              )}
             </div>
 
             <div className="md:col-span-2">

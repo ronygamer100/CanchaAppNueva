@@ -206,9 +206,20 @@ export default function PlayerPanelPage() {
         <section className="mb-10">
           <p className="eyebrow mb-4">Próximas reservas ({futuras.length})</p>
           {futuras.length === 0 ? (
-            <div className="card text-center py-12">
-              <p className="text-ink/50 font-mono mb-2">No tienes reservas próximas.</p>
-              <p className="text-sm text-ink/60">Reserva entrando al link que te compartió la cancha.</p>
+            <div className="border-2 border-ink/10 p-10 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-pitch-400/20 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8 text-pitch-700">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="3" y1="9" x2="21" y2="9" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                </svg>
+              </div>
+              <p className="font-display text-xl mb-2">No tienes partidos próximos</p>
+              <p className="text-ink/60 text-sm mb-6">¿Cuándo fue la última vez que jugaste? Busca una cancha disponible ahora.</p>
+              <Link href="/jugador/explorar" className="btn-accent">
+                Encontrar cancha →
+              </Link>
             </div>
           ) : (
             <div className="space-y-3">

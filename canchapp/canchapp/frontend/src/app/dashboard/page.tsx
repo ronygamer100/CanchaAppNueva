@@ -206,16 +206,41 @@ export default function DashboardPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-10">
         {venues.length === 0 ? (
-          <div className="card-brut bg-pitch-400 max-w-2xl mx-auto text-center py-12">
-            <p className="eyebrow mb-3">¡Bienvenido!</p>
-            <h2 className="display-lg mb-4">Registra tu negocio</h2>
-            <p className="text-ink/80 mb-6">
-              Datos del local primero (nombre, dirección, horario). Después agregas
-              las canchas (F7, F11, sala, las que tengas).
-            </p>
-            <Link href="/dashboard/venue/nuevo" className="btn-primary">
-              Crear negocio
-            </Link>
+          <div className="max-w-2xl mx-auto">
+            <div className="card-brut bg-pitch-400 text-center py-10 mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-pitch-900 flex items-center justify-center">
+                <svg viewBox="0 0 32 32" fill="none" className="w-9 h-9">
+                  <circle cx="16" cy="16" r="13" stroke="#7CD992" strokeWidth="2" />
+                  <path d="M16 5L20 9L18 13L14 13L12 9L16 5Z" fill="#7CD992" />
+                  <path d="M27 14L25 18L21 18L19 14L21 10L25 10L27 14Z" fill="#7CD992" />
+                  <path d="M5 14L7 10L11 10L13 14L11 18L7 18L5 14Z" fill="#7CD992" />
+                  <path d="M16 27L12 23L14 19L18 19L20 23L16 27Z" fill="#7CD992" />
+                </svg>
+              </div>
+              <p className="eyebrow mb-2">¡Bienvenido a CanchApp!</p>
+              <h2 className="display-lg mb-3">Empieza en 3 pasos</h2>
+              <p className="text-ink/70 mb-8 max-w-md mx-auto">
+                En 5 minutos tendrás tu cancha online y lista para recibir reservas.
+              </p>
+              <div className="grid sm:grid-cols-3 gap-4 text-left mb-8">
+                {[
+                  { n: '1', title: 'Registra tu negocio', desc: 'Nombre, dirección, horario y foto del local.' },
+                  { n: '2', title: 'Agrega tus canchas', desc: 'Tipo, precio por hora y adelanto requerido.' },
+                  { n: '3', title: 'Comparte el link', desc: 'Pégalo en Instagram, WhatsApp o Google Maps.' },
+                ].map((s) => (
+                  <div key={s.n} className="bg-pitch-900 text-cream p-4">
+                    <div className="w-8 h-8 bg-pitch-400 text-ink font-display font-bold flex items-center justify-center mb-3">
+                      {s.n}
+                    </div>
+                    <p className="font-semibold mb-1">{s.title}</p>
+                    <p className="text-xs text-cream/70">{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <Link href="/dashboard/venue/nuevo" className="btn-primary text-lg px-8 py-4">
+                Crear mi negocio →
+              </Link>
+            </div>
           </div>
         ) : (
           <>
