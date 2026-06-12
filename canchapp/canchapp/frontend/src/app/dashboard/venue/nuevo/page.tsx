@@ -38,6 +38,8 @@ export default function NuevoVenuePage() {
   const [yapeQr, setYapeQr] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Si el usuario edita el slug manualmente, dejamos de autogenerar
+  const [slugEdited, setSlugEdited] = useState(false);
 
   function update<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -96,7 +98,13 @@ export default function NuevoVenuePage() {
               <label className="label-field">Nombre comercial</label>
               <input
                 required value={form.nombre}
-                onChange={(e) => { update('nombre', e.target.value); if (!form.slug) update('slug', slugify(e.target.value)); }}
+                onChange={(e) => {
+                  const nombre = e.target.value;
+                  update('nombre', nombre);
+                  if (!slugEdited) {
+                    update('slug', slugify(nombre));
+                  }
+                }}
                 placeholder="Ej. Sintética Los Olivos"
                 className="input-field"
               />
@@ -110,7 +118,10 @@ export default function NuevoVenuePage() {
                 </span>
                 <input
                   required value={form.slug}
-                  onChange={(e) => update('slug', slugify(e.target.value))}
+                  onChange={(e) => {
+                    setSlugEdited(true);
+                    update('slug', slugify(e.target.value));
+                  }}
                   placeholder="mis-canchas"
                   className="flex-1 px-3 py-3 bg-cream font-mono text-sm focus:outline-none min-w-0"
                   pattern="[a-z0-9-]+"

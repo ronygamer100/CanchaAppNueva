@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta, time
+from app.core.timezone import today_peru, now_peru
 from typing import List, Optional, Literal
 from collections import defaultdict
 from io import BytesIO
@@ -98,7 +99,7 @@ def _compute_range(
     """Devuelve (first_day, last_day) según el período."""
     if period == "month":
         if year is None or month is None:
-            today = date.today()
+            today = today_peru()
             year, month = today.year, today.month
         first = date(year, month, 1)
         if month == 12:
@@ -108,7 +109,7 @@ def _compute_range(
         last = nf - timedelta(days=1)
         return first, last
     else:  # week
-        start = _monday_of(week_start or date.today())
+        start = _monday_of(week_start or today_peru())
         return start, start + timedelta(days=6)
 
 
@@ -212,7 +213,7 @@ def week_reservations(
     venue = _venue_or_404(db, venue_id, owner)
     sweep_auto_confirms(db, owner_id=owner.id)
 
-    start = _monday_of(week_start or date.today())
+    start = _monday_of(week_start or today_peru())
     end = start + timedelta(days=6)
 
     rows = (

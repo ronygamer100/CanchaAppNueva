@@ -167,42 +167,23 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen">
-      <header className="border-b-2 border-ink/10 bg-cream sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-pitch-900 grid place-items-center">
-              <div className="w-3 h-3 bg-pitch-400 rounded-full" />
-            </div>
-            <div>
-              <p className="font-display font-semibold leading-none tracking-tightest">{owner?.nombre_negocio}</p>
-              <p className="font-mono text-xs text-ink/50 mt-0.5">{owner?.email}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setInboxOpen((v) => !v)}
-              className="relative px-3 py-2 border-2 border-ink/20 hover:border-ink font-medium text-sm"
-            >
-              <span className="mr-1">🔔</span> Pendientes
-              {pendingCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-clay text-cream font-mono text-xs px-1.5 py-0.5 border-2 border-ink min-w-[24px] text-center">
-                  {pendingCount > 99 ? '99+' : pendingCount}
-                </span>
-              )}
-            </button>
-            <Link href="/dashboard/venue/nuevo" className="btn-ghost !py-2 !px-3 text-sm">
-              + Nuevo negocio
-            </Link>
-            <button
-              onClick={() => { clearToken(); router.push('/'); }}
-              className="text-sm text-ink/60 hover:text-ink px-3 py-2"
-            >
-              Salir
-            </button>
-          </div>
+    <main className="min-h-screen bg-cream">
+      {/* Topbar con notificaciones (la nav está en la sidebar) */}
+      <div className="border-b-2 border-ink/10 bg-cream hidden lg:block">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-end gap-2">
+          <button
+            onClick={() => setInboxOpen((v) => !v)}
+            className="relative px-3 py-2 border-2 border-ink/20 hover:border-ink font-medium text-sm"
+          >
+            <span className="mr-1">🔔</span> Pendientes
+            {pendingCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-clay text-cream font-mono text-xs px-1.5 py-0.5 border-2 border-ink min-w-[24px] text-center">
+                {pendingCount > 99 ? '99+' : pendingCount}
+              </span>
+            )}
+          </button>
         </div>
-      </header>
+      </div>
 
       <div className="max-w-7xl mx-auto px-6 py-10">
         {venues.length === 0 ? (

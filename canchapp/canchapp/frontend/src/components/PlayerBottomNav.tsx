@@ -5,11 +5,14 @@ import { usePathname } from 'next/navigation';
 
 const TABS = [
   {
-    href: '/',
-    label: 'Inicio',
+    href: '/jugador',
+    label: 'Mis reservas',
     icon: (active: boolean) => (
       <svg viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-        <path d="M3 12L12 3L21 12V20A1 1 0 0 1 20 21H15V16H9V21H4A1 1 0 0 1 3 20Z" strokeLinejoin="round" />
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <line x1="3" y1="9" x2="21" y2="9" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="16" y1="2" x2="16" y2="6" />
       </svg>
     ),
   },
@@ -25,25 +28,13 @@ const TABS = [
     ),
   },
   {
-    href: '/jugador',
-    label: 'Mis reservas',
-    icon: (active: boolean) => (
-      <svg viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <line x1="3" y1="9" x2="21" y2="9" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        {active && <path d="M8 14h8M8 17h5" stroke="white" strokeLinecap="round" />}
-      </svg>
-    ),
-  },
-  {
-    href: '/jugador#perfil',
-    label: 'Perfil',
-    icon: (active: boolean) => (
-      <svg viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
+    href: '/',
+    label: 'Salir',
+    icon: () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16 17 21 12 16 7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
       </svg>
     ),
   },
@@ -56,16 +47,15 @@ const TABS = [
 export default function PlayerBottomNav() {
   const pathname = usePathname();
 
-  // Solo mostrar en rutas de jugador
+  // Solo mostrar en rutas de jugador autenticado
   const isPlayerRoute =
     pathname === '/jugador' ||
-    pathname === '/jugador/explorar' ||
     pathname.startsWith('/jugador/');
 
-  // También en la landing si es el tab de jugadores (no podemos saber el tab, la mostramos igual)
-  const showOnLanding = pathname === '/';
+  if (!isPlayerRoute) return null;
 
-  if (!isPlayerRoute && !showOnLanding) return null;
+  // No mostrar en /jugador/login (la pantalla de inicio de sesión no necesita nav)
+  if (pathname === '/jugador/login') return null;
 
   function isActive(href: string): boolean {
     if (href === '/') return pathname === '/';
@@ -75,7 +65,7 @@ export default function PlayerBottomNav() {
 
   return (
     <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-cream border-t-2 border-ink/10 safe-area-pb">
-      <div className="grid grid-cols-4 h-16">
+      <div className="grid grid-cols-3 h-16">
         {TABS.map((tab) => {
           const active = isActive(tab.href);
           return (

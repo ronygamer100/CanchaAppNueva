@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.config import settings as app_settings
+from app.core.timezone import today_peru, now_peru
 from app.models.venue import Venue
 from app.models.court import Court
 from app.models.reservation import Reservation, ReservationStatus
@@ -81,11 +82,10 @@ def list_venues_public(
 
         # Filtro "disponible hoy" — verificar que alguna cancha tenga al menos un slot libre
         if disponible_hoy:
-            from datetime import date as _date
             from app.services.availability import get_day_availability
             tiene_libre = False
             for c in canchas_activas:
-                slots = get_day_availability(db, c, _date.today())
+                slots = get_day_availability(db, c, today_peru())
                 if any(s.disponible for s in slots):
                     tiene_libre = True
                     break
@@ -195,7 +195,7 @@ async def create_reservation(
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de hora inválido (HH:MM)")
 
-    if fecha < date.today():
+    if fecha < today_peru():
         raise HTTPException(status_code=400, detail="La fecha no puede ser pasada")
 
     if not slot_is_available(db, court, fecha, h_ini, h_fin):
@@ -305,7 +305,7 @@ def cancel_reservation_public(token: str, db: Session = Depends(get_db)):
 
     from datetime import datetime as dt
     inicio_reserva = dt.combine(reserva.fecha, reserva.hora_inicio)
-    horas_restantes = (inicio_reserva - dt.now()).total_seconds() / 3600
+    horas_restantes = (inicio_reserva - now_peru()).total_seconds() / 3600
     if horas_restantes < 2:
         raise HTTPException(status_code=400, detail="No se puede cancelar a menos de 2 horas del inicio.")
 
