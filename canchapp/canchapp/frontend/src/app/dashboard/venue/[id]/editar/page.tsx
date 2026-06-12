@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch, API_URL } from '@/lib/api';
+import { humanizeError } from '@/lib/errors';
 import { showToast } from '@/components/Toast';
 import type { Venue } from '@/lib/types';
 import { DISTRITOS_AREQUIPA } from '@/lib/distritos';
 import MapPicker, { AREQUIPA_CENTER } from '@/components/MapPicker';
 import ConfirmationModePicker from '@/components/ConfirmationModePicker';
 import AmenitiesPicker from '@/components/AmenitiesPicker';
+import PageHeader from '@/components/PageHeader';
 
 type FormState = {
   nombre: string;
@@ -87,7 +89,7 @@ export default function EditarVenuePage() {
       showToast('Negocio actualizado correctamente');
       router.push('/dashboard');
     } catch (err) {
-      setError((err as Error).message);
+      setError(humanizeError(err));
     } finally { setLoading(false); }
   }
 
@@ -98,7 +100,7 @@ export default function EditarVenuePage() {
       await apiFetch(`/api/venues/${venue.id}`, { method: 'DELETE', auth: true });
       router.push('/dashboard');
     } catch (err) {
-      setError((err as Error).message);
+      setError(humanizeError(err));
       setDeleting(false);
     }
   }
@@ -112,22 +114,24 @@ export default function EditarVenuePage() {
   }
 
   return (
-    <main className="min-h-screen">
-      <header className="border-b-2 border-ink/10">
-        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link href="/dashboard" className="text-sm font-medium hover:underline">
-            ← Volver al panel
-          </Link>
-          <a href={`/c/${venue.slug}`} target="_blank"
-             className="font-mono text-xs bg-pitch-100 border-2 border-ink px-3 py-1 hover:bg-pitch-400">
-            /c/{venue.slug} ↗
-          </a>
-        </div>
-      </header>
-
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        <p className="eyebrow mb-3">Editar negocio</p>
-        <h1 className="display-lg mb-10">{venue.nombre}</h1>
+    <main className="min-h-screen pb-20 lg:pb-0">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <PageHeader
+          eyebrow="Editar negocio"
+          title={venue.nombre}
+          description="Configura los datos generales de tu local"
+          backHref="/dashboard"
+          backLabel="← Panel"
+          actions={
+            <a
+              href={`/c/${venue.slug}`}
+              target="_blank"
+              className="btn-ghost btn-sm font-mono"
+            >
+              Ver público ↗
+            </a>
+          }
+        />
 
         <form onSubmit={submit} className="space-y-8">
           <div className="grid md:grid-cols-2 gap-5">

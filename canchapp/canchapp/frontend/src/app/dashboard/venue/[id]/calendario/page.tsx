@@ -1,5 +1,6 @@
 'use client';
 
+import { LoadingScreen } from '@/components/Skeleton';
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -165,7 +166,7 @@ export default function CalendarioPage() {
     );
   }
   if (!venue) {
-    return <main className="min-h-screen grid place-items-center"><p className="font-mono text-sm text-ink/50">Cargando…</p></main>;
+    return <LoadingScreen />;
   }
 
   return (

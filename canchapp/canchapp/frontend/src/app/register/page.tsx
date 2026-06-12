@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { apiFetch, setToken } from '@/lib/api';
 import { normalizePeruvianWhatsApp } from '@/lib/whatsapp';
 import GoogleSignIn from '@/components/GoogleSignIn';
+import { humanizeError } from '@/lib/errors';
 import WhatsAppInput from '@/components/WhatsAppInput';
 
 export default function RegisterPage() {
@@ -54,7 +55,7 @@ export default function RegisterPage() {
       setToken(data.access_token);
       router.push('/dashboard');
     } catch (err) {
-      setError((err as Error).message);
+      setError(humanizeError(err));
     } finally { setLoading(false); }
   }
 
@@ -81,7 +82,7 @@ export default function RegisterPage() {
       setToken(data.access_token);
       router.push('/dashboard');
     } catch (err) {
-      setError((err as Error).message);
+      setError(humanizeError(err));
     }
   }
 

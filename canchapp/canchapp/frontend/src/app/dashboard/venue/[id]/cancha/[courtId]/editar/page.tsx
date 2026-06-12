@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { humanizeError } from '@/lib/errors';
 import type { Court } from '@/lib/types';
 
 export default function EditarCanchaPage() {
@@ -48,7 +49,7 @@ export default function EditarCanchaPage() {
       });
       router.push('/dashboard');
     } catch (err) {
-      setError((err as Error).message);
+      setError(humanizeError(err));
     } finally { setLoading(false); }
   }
 
@@ -59,7 +60,7 @@ export default function EditarCanchaPage() {
       await apiFetch(`/api/courts/${court.id}`, { method: 'DELETE', auth: true });
       router.push('/dashboard');
     } catch (err) {
-      setError((err as Error).message);
+      setError(humanizeError(err));
       setDeleting(false);
     }
   }

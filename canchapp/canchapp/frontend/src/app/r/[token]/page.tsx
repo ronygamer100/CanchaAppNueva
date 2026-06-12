@@ -1,8 +1,10 @@
 'use client';
 
+import { LoadingScreen } from '@/components/Skeleton';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import { humanizeError } from '@/lib/errors';
 import type { ReservationPublic } from '@/lib/types';
 
 function formatFechaLarga(iso: string) {
@@ -35,7 +37,7 @@ export default function CancelacionPage() {
       );
       setReserva(updated); setConfirming(false);
     } catch (err) {
-      setError((err as Error).message);
+      setError(humanizeError(err));
     } finally { setCancelling(false); }
   }
 
@@ -51,7 +53,7 @@ export default function CancelacionPage() {
     );
   }
   if (!reserva) {
-    return <main className="min-h-screen grid place-items-center"><p className="font-mono text-sm text-ink/50">Cargando…</p></main>;
+    return <LoadingScreen />;
   }
 
   const yaCancelada = reserva.estado === 'cancelada';

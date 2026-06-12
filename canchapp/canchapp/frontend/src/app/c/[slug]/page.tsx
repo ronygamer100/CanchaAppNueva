@@ -1,9 +1,11 @@
 'use client';
 
+import { LoadingScreen } from '@/components/Skeleton';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch, API_URL, getPlayerToken } from '@/lib/api';
+import { humanizeError } from '@/lib/errors';
 import { normalizePeruvianWhatsApp, isValidPeruvianWhatsApp, displayPeruvianWhatsApp } from '@/lib/whatsapp';
 import type {
   VenuePublic, CourtPublicLite, DayAvailability, Slot, ReservationCreated, Player,
@@ -146,7 +148,7 @@ export default function VenuePublicPage() {
       );
       setSuccess(created);
     } catch (err) {
-      setFormError((err as Error).message);
+      setFormError(humanizeError(err));
     } finally {
       setSubmitting(false);
     }
@@ -164,7 +166,7 @@ export default function VenuePublicPage() {
     );
   }
   if (!venue) {
-    return <main className="min-h-screen grid place-items-center"><p className="font-mono text-sm text-ink/50">Cargando…</p></main>;
+    return <LoadingScreen />;
   }
 
   if (success) {

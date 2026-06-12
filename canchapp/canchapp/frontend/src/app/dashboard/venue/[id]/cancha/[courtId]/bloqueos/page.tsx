@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { humanizeError } from '@/lib/errors';
 import type { Court, BlockedSlot } from '@/lib/types';
 
 function todayISO() {
@@ -65,7 +66,7 @@ export default function BloqueosPage() {
       setForm((f) => ({ ...f, motivo: '' }));
       await loadBlocks();
     } catch (err) {
-      setError((err as Error).message);
+      setError(humanizeError(err));
     } finally { setSaving(false); }
   }
 

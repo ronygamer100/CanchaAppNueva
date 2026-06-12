@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { loginWithEmail, apiFetch, setToken } from '@/lib/api';
+import { humanizeError } from '@/lib/errors';
 import GoogleSignIn from '@/components/GoogleSignIn';
 
 export default function LoginPage() {
@@ -21,7 +22,7 @@ export default function LoginPage() {
       await loginWithEmail(email, password);
       router.push('/dashboard');
     } catch (err) {
-      setError((err as Error).message);
+      setError(humanizeError(err));
     } finally {
       setLoading(false);
     }
@@ -37,7 +38,7 @@ export default function LoginPage() {
       setToken(data.access_token);
       router.push('/dashboard');
     } catch (err) {
-      const msg = (err as Error).message;
+      const msg = humanizeError(err);
       if (msg.includes('No existe')) {
         setError('Esta cuenta no está registrada. Regístrate primero.');
       } else {

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch, setPlayerToken } from '@/lib/api';
 import GoogleSignIn from '@/components/GoogleSignIn';
+import { humanizeError } from '@/lib/errors';
 
-function PlayerLoginContent() {
+export default function PlayerLoginPage() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get('next') || '/jugador';
@@ -22,7 +23,7 @@ function PlayerLoginContent() {
       setPlayerToken(data.access_token);
       router.push(next);
     } catch (err) {
-      setError((err as Error).message);
+      setError(humanizeError(err));
     }
   }
 
@@ -42,7 +43,8 @@ function PlayerLoginContent() {
           <p className="eyebrow !text-pitch-400 mb-4">Para jugadores</p>
           <h1 className="display-lg mb-4">Tus reservas en un solo lugar.</h1>
           <p className="text-cream/70 text-lg max-w-md">
-            Reserva más rápido y mira el historial de todas tus canchas favoritas.
+            Reserva más rápido (tus datos quedan guardados) y mira el historial de todas tus
+            canchas favoritas.
           </p>
         </div>
 
@@ -53,24 +55,22 @@ function PlayerLoginContent() {
         <div className="max-w-md w-full">
           <h2 className="display-lg mb-4">Entra con Google</h2>
           <p className="text-ink/70 mb-8">
-            Un click. Sin contraseñas. Si es tu primera vez, te creamos la cuenta automáticamente.
+            Un click. Sin contraseñas, sin email de verificación. Si es tu primera vez, te creamos
+            la cuenta automáticamente.
           </p>
+
           <GoogleSignIn onCredential={handleGoogle} text="continue_with" width={360} />
+
           {error && <p className="text-clay text-sm font-medium mt-4">{error}</p>}
+
           <p className="mt-8 text-sm text-ink/60">
             ¿Eres dueño de cancha?{' '}
-            <Link href="/login" className="underline font-medium text-ink">Entra aquí</Link>
+            <Link href="/login" className="underline font-medium text-ink">
+              Entra aquí
+            </Link>
           </p>
         </div>
       </section>
     </main>
-  );
-}
-
-export default function PlayerLoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen grid place-items-center"><p className="font-mono text-sm text-ink/50">Cargando…</p></div>}>
-      <PlayerLoginContent />
-    </Suspense>
   );
 }
