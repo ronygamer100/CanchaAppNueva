@@ -169,18 +169,10 @@ export default function CalendarioPage() {
   }
 
   return (
-    <main className="min-h-screen">
-      <header className="border-b-2 border-ink/10">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link href="/dashboard" className="text-sm font-medium hover:underline">
-            ← Volver al panel
-          </Link>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-6 py-10">
+    <main className="min-h-screen pb-20 lg:pb-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <p className="eyebrow mb-2">Calendario · {venue.nombre}</p>
-        <h1 className="display-lg mb-8">Vista semanal</h1>
+        <h1 className="text-2xl sm:text-4xl font-display font-bold mb-6 sm:mb-8">Vista semanal</h1>
 
         {/* Controles */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -231,11 +223,8 @@ export default function CalendarioPage() {
 
         {loading && <p className="font-mono text-xs text-ink/50 mb-3">Cargando…</p>}
 
-        {/* Grilla del calendario */}
-        <div className="border-2 border-ink overflow-x-auto bg-cream -mx-2 sm:mx-0">
-          <p className="sm:hidden text-xs font-mono text-ink/40 px-3 py-2 bg-ink/5 border-b border-ink/10">
-            ← Desliza para ver toda la semana
-          </p>
+        {/* VISTA DESKTOP — grid semanal */}
+        <div className="hidden md:block border-2 border-ink overflow-x-auto bg-cream">
           <div className="min-w-[640px]">
             {/* Header de días */}
             <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b-2 border-ink bg-ink text-cream">
@@ -270,7 +259,6 @@ export default function CalendarioPage() {
                     <div key={dayIdx} className="border-l border-ink/10 min-h-[56px] p-1 space-y-1">
                       {cellItems.map((it) => {
                         const startHour = timeToMin(it.hora_inicio) / 60;
-                        // solo renderizar en su slot de inicio para no duplicar
                         if (Math.floor(startHour) !== h) return null;
                         return (
                           <button
@@ -281,9 +269,7 @@ export default function CalendarioPage() {
                             title={`${it.jugador_nombre} · ${it.hora_inicio.slice(0,5)}-${it.hora_fin.slice(0,5)}`}
                           >
                             <div className="font-semibold truncate">{it.jugador_nombre}</div>
-                            <div className="font-mono opacity-70 truncate">
-                              {it.court_nombre}
-                            </div>
+                            <div className="font-mono opacity-70 truncate">{it.court_nombre}</div>
                           </button>
                         );
                       })}
@@ -293,6 +279,66 @@ export default function CalendarioPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* VISTA MÓVIL — lista por día */}
+        <div className="md:hidden space-y-4">
+          {DOW_LABELS.map((label, dayIdx) => {
+            const day = addDays(weekStart, dayIdx);
+            const isToday = isoDate(day) === isoDate(new Date());
+            // Filtrar reservas de este día
+            const dayItems = (data?.items || [])
+              .filter((it) => {
+                const itemDay = new Date(it.fecha + 'T00:00:00');
+                return itemDay.getDate() === day.getDate() && itemDay.getMonth() === day.getMonth();
+              })
+              .sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio));
+
+            return (
+              <div key={dayIdx} className="border-2 border-ink/20 bg-cream">
+                <div className={`px-4 py-3 flex items-center justify-between ${
+                  isToday ? 'bg-pitch-400 text-ink' : 'bg-ink text-cream'
+                }`}>
+                  <div>
+                    <p className="text-[10px] font-mono uppercase tracking-widest opacity-70">{label}</p>
+                    <p className="font-display text-xl font-bold leading-none">
+                      {day.getDate()} {day.toLocaleDateString('es-PE', { month: 'short' })}
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono">
+                    {dayItems.length} {dayItems.length === 1 ? 'reserva' : 'reservas'}
+                  </span>
+                </div>
+
+                {dayItems.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-sm text-ink/40 font-mono">Sin reservas</p>
+                ) : (
+                  <div className="divide-y divide-ink/10">
+                    {dayItems.map((it) => (
+                      <button
+                        key={it.id}
+                        onClick={() => setSelected(it)}
+                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-ink/5 text-left"
+                      >
+                        <div className={`font-mono text-xs px-2 py-1 border-2 shrink-0 ${statusStyle[it.estado]}`}>
+                          {it.hora_inicio.slice(0,5)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold truncate">{it.jugador_nombre}</p>
+                          <p className="text-xs text-ink/60 font-mono truncate">
+                            {it.court_nombre} · {it.horas}h
+                          </p>
+                        </div>
+                        <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border ${statusStyle[it.estado]} shrink-0`}>
+                          {it.estado}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

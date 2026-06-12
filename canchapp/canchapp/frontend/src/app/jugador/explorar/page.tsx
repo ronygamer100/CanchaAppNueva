@@ -169,7 +169,7 @@ export default function ExplorarPage() {
       <header className="border-b-2 border-ink/10 bg-cream sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-4">
-            <Link href="/" className="font-display font-semibold tracking-tightest">
+            <Link href="/jugador" className="font-display font-semibold tracking-tightest">
               cancha<span className="text-pitch-700">.</span>pe
             </Link>
             <Link href="/jugador" className="text-sm hover:underline text-ink/70">

@@ -115,23 +115,15 @@ export default function MetricasPage() {
   const k = data.kpis;
 
   return (
-    <main className="min-h-screen">
-      <header className="border-b-2 border-ink/10">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link href="/dashboard" className="text-sm font-medium hover:underline">
-            ← Volver al panel
-          </Link>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-6 py-10">
+    <main className="min-h-screen pb-20 lg:pb-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <p className="eyebrow mb-2">Métricas · {venue.nombre}</p>
 
         {/* Toggle período */}
         <div className="flex items-center gap-2 mb-6">
           <button
             onClick={() => setPeriod('month')}
-            className={`px-4 py-2 text-sm font-medium border-2 ${
+            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm font-medium border-2 ${
               period === 'month' ? 'bg-ink text-cream border-ink' : 'border-ink/20'
             }`}
           >
@@ -139,7 +131,7 @@ export default function MetricasPage() {
           </button>
           <button
             onClick={() => setPeriod('week')}
-            className={`px-4 py-2 text-sm font-medium border-2 ${
+            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm font-medium border-2 ${
               period === 'week' ? 'bg-ink text-cream border-ink' : 'border-ink/20'
             }`}
           >
@@ -147,8 +139,8 @@ export default function MetricasPage() {
           </button>
         </div>
 
-        <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
-          <h1 className="display-lg leading-none capitalize">{periodLabel}</h1>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8 sm:mb-10">
+          <h1 className="text-2xl sm:text-4xl font-display font-bold leading-none capitalize">{periodLabel}</h1>
           <div className="flex items-center gap-2 flex-wrap">
             {period === 'month' ? (
               <>
@@ -173,9 +165,9 @@ export default function MetricasPage() {
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="btn-accent !py-2 !px-3 text-sm ml-2"
+              className="btn-accent !py-2 !px-3 text-sm ml-auto sm:ml-2"
             >
-              {exporting ? 'Exportando…' : '↓ Excel'}
+              {exporting ? '...' : '↓ Excel'}
             </button>
           </div>
         </div>
@@ -183,7 +175,7 @@ export default function MetricasPage() {
         {loading && <p className="font-mono text-xs text-ink/50 mb-3">Cargando…</p>}
 
         {/* KPIs */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
           <KpiCard
             label={period === 'month' ? 'Ingresos del mes' : 'Ingresos de la semana'}
             value={`S/ ${k.ingresos_mes.toFixed(2)}`}

@@ -114,20 +114,31 @@ export default function PlayerPanelPage() {
   const pasadas = reservations.filter((r) => new Date(r.fecha + 'T00:00:00') < today);
 
   return (
-    <main className="min-h-screen">
-      <header className="border-b-2 border-ink/10">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+    <main className="min-h-screen pb-20 lg:pb-0">
+      <header className="border-b-2 border-ink/10 bg-cream sticky top-0 z-30">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/jugador" className="flex items-center gap-2">
             <div className="w-7 h-7 bg-ink grid place-items-center">
-              <div className="w-2.5 h-2.5 bg-pitch-400 rounded-full" />
+              <svg viewBox="0 0 32 32" fill="none" className="w-4 h-4 text-pitch-400">
+                <circle cx="16" cy="16" r="13" stroke="currentColor" strokeWidth="2" />
+                <path d="M16 5L20 9L18 13L14 13L12 9L16 5Z" fill="currentColor" />
+                <path d="M27 14L25 18L21 18L19 14L21 10L25 10L27 14Z" fill="currentColor" />
+                <path d="M5 14L7 10L11 10L13 14L11 18L7 18L5 14Z" fill="currentColor" />
+                <path d="M16 27L12 23L14 19L18 19L20 23L16 27Z" fill="currentColor" />
+              </svg>
             </div>
             <span className="font-display font-semibold tracking-tightest">
               cancha<span className="text-pitch-700">.</span>pe
             </span>
           </Link>
-          <button onClick={logout} className="text-sm text-ink/60 hover:text-ink">
-            Cerrar sesión
-          </button>
+          <div className="flex items-center gap-3">
+            <Link href="/jugador/explorar" className="text-sm font-medium hover:underline hidden sm:inline">
+              Explorar
+            </Link>
+            <button onClick={logout} className="text-sm text-ink/60 hover:text-ink">
+              Cerrar sesión
+            </button>
+          </div>
         </div>
       </header>
 
