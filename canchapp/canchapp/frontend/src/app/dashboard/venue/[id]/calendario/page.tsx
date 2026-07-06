@@ -176,19 +176,20 @@ export default function CalendarioPage() {
         <h1 className="text-2xl sm:text-4xl font-display font-bold mb-6 sm:mb-8">Vista semanal</h1>
 
         {/* Controles */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div className="flex flex-wrap items-center gap-2">
             <button onClick={() => shiftWeek(-1)} className="border-2 border-ink/20 hover:border-ink px-3 py-2 text-sm font-mono">←</button>
             <button onClick={() => setWeekStart(mondayOf(new Date()))} className="border-2 border-ink/20 hover:border-ink px-3 py-2 text-sm font-medium">Hoy</button>
             <button onClick={() => shiftWeek(1)} className="border-2 border-ink/20 hover:border-ink px-3 py-2 text-sm font-mono">→</button>
-            <span className="ml-3 font-mono text-sm text-ink/70">
+            <span className="w-full sm:w-auto sm:ml-3 font-mono text-sm text-ink/70">
               {weekStart.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })} —
               {' '}{addDays(weekStart, 6).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}
             </span>
           </div>
 
           {courts.length > 1 && (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="-mx-4 sm:mx-0 overflow-x-auto pb-1">
+              <div className="flex items-center gap-2 min-w-max px-4 sm:px-0">
               <button
                 onClick={() => setActiveCourt('all')}
                 className={`px-3 py-1 text-xs font-medium border-2 ${
@@ -208,6 +209,7 @@ export default function CalendarioPage() {
                   {c.nombre}
                 </button>
               ))}
+              </div>
             </div>
           )}
         </div>
@@ -288,11 +290,8 @@ export default function CalendarioPage() {
             const day = addDays(weekStart, dayIdx);
             const isToday = isoDate(day) === isoDate(new Date());
             // Filtrar reservas de este día
-            const dayItems = (data?.items || [])
-              .filter((it) => {
-                const itemDay = new Date(it.fecha + 'T00:00:00');
-                return itemDay.getDate() === day.getDate() && itemDay.getMonth() === day.getMonth();
-              })
+            const dayItems = items
+              .filter((it) => it.fecha === isoDate(day))
               .sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio));
 
             return (
@@ -319,7 +318,7 @@ export default function CalendarioPage() {
                       <button
                         key={it.id}
                         onClick={() => setSelected(it)}
-                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-ink/5 text-left"
+                        className="w-full px-3 sm:px-4 py-3 grid grid-cols-[auto_minmax(0,1fr)] min-[420px]:grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 hover:bg-ink/5 text-left"
                       >
                         <div className={`font-mono text-xs px-2 py-1 border-2 shrink-0 ${statusStyle[it.estado]}`}>
                           {it.hora_inicio.slice(0,5)}
@@ -330,7 +329,7 @@ export default function CalendarioPage() {
                             {it.court_nombre} · {it.horas}h
                           </p>
                         </div>
-                        <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border ${statusStyle[it.estado]} shrink-0`}>
+                        <span className={`hidden min-[420px]:inline-block max-w-24 truncate text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border ${statusStyle[it.estado]} shrink-0`}>
                           {it.estado}
                         </span>
                       </button>
@@ -346,11 +345,11 @@ export default function CalendarioPage() {
       {/* Modal de detalle */}
       {selected && (
         <div className="fixed inset-0 bg-ink/60 z-50 grid place-items-center px-4" onClick={() => setSelected(null)}>
-          <div className="card-brut bg-cream max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="card-brut bg-cream max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <p className={`eyebrow mb-3 ${selected.estado === 'pendiente' ? '!text-clay' : '!text-pitch-700'}`}>
               {selected.estado === 'pendiente' ? 'Reserva pendiente' : 'Reserva confirmada'}
             </p>
-            <h3 className="display-lg mb-2 leading-none">{selected.jugador_nombre}</h3>
+            <h3 className="display-lg mb-2 leading-none break-words">{selected.jugador_nombre}</h3>
             <p className="font-mono text-sm text-ink/70 mb-1">{selected.jugador_whatsapp}</p>
             <p className="font-mono text-xs text-ink/50 mb-4" title={new Date(selected.created_at).toLocaleString('es-PE')}>
               Reservó {formatRelativeTime(selected.created_at)}

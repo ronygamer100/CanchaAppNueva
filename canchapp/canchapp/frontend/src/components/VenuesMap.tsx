@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import { useEffect, useRef } from 'react';
 import { AREQUIPA_CENTER } from './MapPicker';
 
@@ -47,7 +48,8 @@ export default function VenuesMap({ venues, apiUrl, height = 480 }: VenuesMapPro
       }
 
       const map = L.map(containerRef.current, {
-        scrollWheelZoom: true,
+        scrollWheelZoom: false,
+        tap: true,
       }).setView(AREQUIPA_CENTER, 13);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -106,7 +108,7 @@ export default function VenuesMap({ venues, apiUrl, height = 480 }: VenuesMapPro
 
         const marker = L.marker([v.lat, v.lng], { icon: greenPin })
           .addTo(map)
-          .bindPopup(popupHtml, { maxWidth: 240 });
+          .bindPopup(popupHtml, { maxWidth: 260, minWidth: 180 });
         markers.push(marker);
       }
 
@@ -120,6 +122,7 @@ export default function VenuesMap({ venues, apiUrl, height = 480 }: VenuesMapPro
       }
 
       mapRef.current = map;
+      window.setTimeout(() => map.invalidateSize(), 0);
     }
 
     init();
@@ -137,8 +140,8 @@ export default function VenuesMap({ venues, apiUrl, height = 480 }: VenuesMapPro
   if (venues.length === 0) {
     return (
       <div
-        style={{ height: `${height}px` }}
-        className="border-2 border-ink/20 grid place-items-center bg-ink/5"
+        style={{ '--map-height': `${height}px` } as CSSProperties}
+        className="responsive-map border-2 border-ink/20 grid place-items-center bg-ink/5 px-4 text-center"
       >
         <p className="font-mono text-sm text-ink/40">
           No hay canchas con ubicación geográfica todavía
@@ -150,8 +153,8 @@ export default function VenuesMap({ venues, apiUrl, height = 480 }: VenuesMapPro
   return (
     <div
       ref={containerRef}
-      style={{ height: `${height}px`, width: '100%' }}
-      className="border-2 border-ink"
+      style={{ '--map-height': `${height}px` } as CSSProperties}
+      className="responsive-map border-2 border-ink"
     />
   );
 }

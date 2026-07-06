@@ -289,7 +289,7 @@ export default function VenuePublicPage() {
       <section className="bg-pitch-900 text-cream">
         <div className="max-w-6xl mx-auto px-6 py-12 md:py-16">
           <p className="eyebrow !text-pitch-400 mb-4">Reserva online</p>
-          <h1 className="display-xl">{venue.nombre}</h1>
+          <h1 className="display-xl break-words">{venue.nombre}</h1>
           <div className="mt-6 flex flex-wrap gap-x-8 gap-y-2 text-sm">
             <span className="flex items-center gap-2"><span className="text-pitch-400">📍</span>{venue.direccion}</span>
             <span className="flex items-center gap-2 font-mono">
@@ -418,9 +418,9 @@ export default function VenuePublicPage() {
             )}
 
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
-              <div>
+              <div className="min-w-0">
                 <p className="eyebrow mb-2">Disponibilidad · {selectedCourt.nombre}</p>
-                <h2 className="display-lg capitalize">{formatFechaLarga(fecha)}</h2>
+                <h2 className="display-lg capitalize break-words">{formatFechaLarga(fecha)}</h2>
               </div>
               <input
                 type="date" value={fecha} min={todayISO()}
@@ -432,7 +432,7 @@ export default function VenuePublicPage() {
               Toca uno o varios horarios <strong>seguidos</strong> para reservar más de una hora.
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 min-[420px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
               {(availability?.slots || []).map((slot) => {
                 const isSelected = selectedSlots.some((s) => s.hora_inicio === slot.hora_inicio);
                 const selectable = isSelectable(slot);
@@ -451,7 +451,7 @@ export default function VenuePublicPage() {
                     key={slot.hora_inicio}
                     disabled={slot.estado !== 'libre'}
                     onClick={() => toggleSlot(slot)}
-                    className={`border-2 p-4 font-mono text-center transition-all ${classes}`}
+                    className={`border-2 px-3 py-4 font-mono text-center transition-all min-h-[86px] ${classes}`}
                   >
                     <div className="text-xs uppercase tracking-wider opacity-60">
                       {slot.estado === 'libre' ? (isSelected ? 'elegido' : 'libre') : slot.estado === 'pendiente' ? 'reservando' : 'ocupado'}
@@ -474,12 +474,12 @@ export default function VenuePublicPage() {
         <section className="bg-ink text-cream py-12 md:py-16">
           <div className="max-w-3xl mx-auto px-6">
             <p className="eyebrow !text-pitch-400 mb-2">Reservar</p>
-            <h2 className="display-lg mb-2">
+            <h2 className="display-lg mb-2 break-words">
               {selectedCourt.nombre} · {formatHora(horaInicio)} – {formatHora(horaFin)}
             </h2>
             <p className="text-cream/70 mb-2 capitalize">{formatFechaLarga(fecha)}</p>
 
-            <div className="mt-6 mb-10 grid grid-cols-3 gap-4 border-2 border-pitch-400/30 p-4">
+            <div className="mt-6 mb-10 grid grid-cols-1 sm:grid-cols-3 gap-4 border-2 border-pitch-400/30 p-4">
               <div>
                 <p className="text-pitch-400 text-xs uppercase tracking-wider font-mono">Duración</p>
                 <p className="font-display text-2xl mt-1">{horas}h</p>
@@ -536,7 +536,7 @@ export default function VenuePublicPage() {
                 <div className="card !bg-cream !text-ink mb-4">
                   <p className="eyebrow mb-3">Paso 1 · Paga el adelanto</p>
                   {venue.yape_qr_url ? (
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                       <img
                         src={venue.yape_qr_url.startsWith('http') ? venue.yape_qr_url : `${API_URL}${venue.yape_qr_url}`}
                         alt="QR Yape"
@@ -578,13 +578,13 @@ export default function VenuePublicPage() {
                 </div>
               )}
 
-              <div className="md:col-span-2 flex flex-wrap gap-3 pt-2">
-                <button type="submit" disabled={submitting} className="btn-accent">
+              <div className="md:col-span-2 flex flex-col sm:flex-row sm:flex-wrap gap-3 pt-2">
+                <button type="submit" disabled={submitting} className="btn-accent w-full sm:w-auto">
                   {submitting ? 'Enviando…' : `Confirmar reserva (S/ ${adelantoTotal})`}
                 </button>
                 <button type="button"
                   onClick={() => { setSelectedSlots([]); setFormError(null); }}
-                  className="btn-ghost !text-cream !border-cream/30 hover:!border-cream">
+                  className="btn-ghost !text-cream !border-cream/30 hover:!border-cream w-full sm:w-auto">
                   Cancelar
                 </button>
               </div>

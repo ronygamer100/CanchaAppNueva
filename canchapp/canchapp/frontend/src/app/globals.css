@@ -12,6 +12,7 @@ html, body {
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 body::before {
@@ -91,6 +92,14 @@ body::before {
     @apply bg-cream border-2 border-ink shadow-brut p-6;
   }
 
+  .responsive-map {
+    width: 100%;
+    height: var(--map-height);
+    min-height: 220px;
+    overflow: hidden;
+    position: relative;
+  }
+
   .link {
     @apply text-pitch-700 hover:text-pitch-900 underline underline-offset-2;
   }
@@ -114,6 +123,35 @@ body::before {
   .skeleton {
     @apply bg-ink/5;
     animation: skeleton-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+.responsive-map .leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+.responsive-map .leaflet-popup-content-wrapper,
+.responsive-map .leaflet-popup-tip {
+  border-radius: 0;
+}
+
+.responsive-map .leaflet-popup-content {
+  max-width: calc(100vw - 72px);
+}
+
+@media (max-width: 640px) {
+  .responsive-map {
+    height: min(var(--map-height), 58vh);
+    min-height: 240px;
+  }
+
+  .responsive-map .leaflet-control-container .leaflet-top {
+    top: 0.5rem;
+  }
+
+  .responsive-map .leaflet-control-container .leaflet-left {
+    left: 0.5rem;
   }
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch, setPlayerToken } from '@/lib/api';
@@ -8,6 +8,14 @@ import GoogleSignIn from '@/components/GoogleSignIn';
 import { humanizeError } from '@/lib/errors';
 
 export default function PlayerLoginPage() {
+  return (
+    <Suspense fallback={<LoginShell />}>
+      <PlayerLoginContent />
+    </Suspense>
+  );
+}
+
+function PlayerLoginContent() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get('next') || '/jugador';
@@ -27,6 +35,18 @@ export default function PlayerLoginPage() {
     }
   }
 
+  return (
+    <LoginShell onGoogle={handleGoogle} error={error} />
+  );
+}
+
+function LoginShell({
+  onGoogle,
+  error,
+}: {
+  onGoogle?: (credential: string) => void;
+  error?: string | null;
+}) {
   return (
     <main className="min-h-screen grid md:grid-cols-2">
       <section className="bg-pitch-900 text-cream p-10 md:p-16 flex flex-col justify-between min-h-[40vh]">
@@ -59,7 +79,11 @@ export default function PlayerLoginPage() {
             la cuenta automáticamente.
           </p>
 
-          <GoogleSignIn onCredential={handleGoogle} text="continue_with" width={360} />
+          {onGoogle ? (
+            <GoogleSignIn onCredential={onGoogle} text="continue_with" width={360} />
+          ) : (
+            <div className="h-10 w-full max-w-[360px] skeleton" />
+          )}
 
           {error && <p className="text-clay text-sm font-medium mt-4">{error}</p>}
 

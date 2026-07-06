@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import { useEffect, useRef } from 'react';
 
 export const AREQUIPA_CENTER: [number, number] = [-16.4090, -71.5375];
@@ -71,9 +72,12 @@ export default function MapPicker({
       const initialZoom = (lat && lng) ? 16 : 13;
 
       if (!mapRef.current) {
+        const isCoarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
         const map = L.map(containerRef.current!, {
-          scrollWheelZoom: true,
+          scrollWheelZoom: false,
           attributionControl: true,
+          tap: true,
+          dragging: !readOnly || !isCoarsePointer,
         }).setView([initialLat, initialLng], initialZoom);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -101,6 +105,7 @@ export default function MapPicker({
 
         mapRef.current = map;
         markerRef.current = marker;
+        window.setTimeout(() => map.invalidateSize(), 0);
       } else {
         const map = mapRef.current as any;
         const marker = markerRef.current as any;
@@ -128,8 +133,8 @@ export default function MapPicker({
   return (
     <div
       ref={containerRef}
-      style={{ height: `${height}px`, width: '100%' }}
-      className="border-2 border-ink"
+      style={{ '--map-height': `${height}px` } as CSSProperties}
+      className="responsive-map border-2 border-ink"
     />
   );
 }
