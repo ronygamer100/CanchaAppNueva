@@ -78,7 +78,7 @@ export default function HomePage() {
             <span className={`font-display font-semibold text-xl tracking-tightest ${
               tab === 'duenos' ? 'text-ink' : 'text-cream'
             }`}>
-              cancha<span className={tab === 'duenos' ? 'text-pitch-700' : 'text-pitch-400'}>.</span>pe
+              fubito
             </span>
           </Link>
 
@@ -211,7 +211,7 @@ export default function HomePage() {
               <SoccerBallIcon className="w-4 h-4 text-pitch-900" />
             </div>
             <p className="font-display text-cream text-lg">
-              cancha<span className="text-pitch-400">.</span>pe
+              fubito
             </p>
           </div>
           <p>Hecho en Arequipa, para Arequipa.</p>
@@ -310,7 +310,7 @@ function HeroDuenos() {
             <StepDark n="2" title="Registra tu local y tus canchas"
               desc="Datos básicos, foto, ubicación en el mapa, precio y QR Yape." />
             <StepDark n="3" title="Comparte el link con tus clientes"
-              desc="Te queda una URL tipo cancha.pe/tu-negocio. Pégala en Instagram, WhatsApp, Google Maps." />
+              desc="Te queda una URL tipo fubito/c/tu-negocio. Pégala en Instagram, WhatsApp, Google Maps." />
           </div>
           <div className="mt-12 text-center">
             <Link href="/register" className="btn-accent">Empezar ahora →</Link>

@@ -144,7 +144,7 @@ export default function EditarVenuePage() {
             <div className="md:col-span-2">
               <label className="label-field">URL pública (no editable)</label>
               <div className="font-mono text-sm bg-ink/5 border-2 border-ink/20 px-3 py-3">
-                cancha.pe/c/{venue.slug}
+                fubito/c/{venue.slug}
               </div>
             </div>
             <div className="md:col-span-2">

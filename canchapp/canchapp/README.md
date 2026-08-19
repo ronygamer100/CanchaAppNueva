@@ -1,7 +1,7 @@
-# CanchApp — MVP
+# fubito — MVP
 
 Sistema de reservas para canchas sintéticas. Un dueño se registra, crea su
-cancha y comparte un link público (ej. `cancha.pe/c/los-olivos`). Los jugadores
+cancha y comparte un link público (ej. `fubito/c/los-olivos`). Los jugadores
 ven la disponibilidad del día, eligen un slot, pagan el adelanto por Yape y
 suben la captura. El dueño confirma desde su panel con un clic y le llega un
 mensaje de WhatsApp al jugador.
@@ -137,7 +137,7 @@ Frontend en `http://localhost:3000`.
 - Reportes mensuales (ingresos estimados, ocupación)
 - Plan de pago: free → S/100/mes después de 60 días
 - Integrar pasarela (Culqi o Izipay) si los dueños lo piden
-- Mapa con todas las canchas de cancha.pe (cuando haya 5+)
+- Mapa con todas las canchas de fubito (cuando haya 5+)
 
 ## Notas para vender a dueños
 

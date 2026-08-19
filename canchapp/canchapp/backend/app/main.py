@@ -155,7 +155,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="CanchApp API",
+    title="fubito API",
     description="API para reserva de canchas sintéticas",
     version="0.2.0",
     lifespan=lifespan,
@@ -183,7 +183,7 @@ app.include_router(player.router)
 
 @app.get("/")
 def root():
-    return {"status": "ok", "service": "CanchApp API", "version": "0.2.0"}
+    return {"status": "ok", "service": "fubito API", "version": "0.2.0"}
 
 
 @app.get("/health")

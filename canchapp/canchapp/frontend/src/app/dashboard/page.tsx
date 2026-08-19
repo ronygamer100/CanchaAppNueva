@@ -198,7 +198,7 @@ export default function DashboardPage() {
                   <path d="M16 27L12 23L14 19L18 19L20 23L16 27Z" fill="#7CD992" />
                 </svg>
               </div>
-              <p className="eyebrow mb-2">¡Bienvenido a CanchApp!</p>
+              <p className="eyebrow mb-2">¡Bienvenido a fubito!</p>
               <h2 className="display-lg mb-3">Empieza en 3 pasos</h2>
               <p className="text-ink/70 mb-8 max-w-md mx-auto">
                 En 5 minutos tendrás tu cancha online y lista para recibir reservas.

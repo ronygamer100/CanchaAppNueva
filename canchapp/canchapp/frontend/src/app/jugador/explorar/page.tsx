@@ -171,7 +171,7 @@ export default function ExplorarPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-4">
             <Link href="/jugador" className="font-display font-semibold tracking-tightest">
-              cancha<span className="text-pitch-700">.</span>pe
+              fubito
             </Link>
             <Link href="/jugador" className="text-sm hover:underline text-ink/70">
               ← Mis reservas

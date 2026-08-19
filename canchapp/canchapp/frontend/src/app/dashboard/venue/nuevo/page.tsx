@@ -114,7 +114,7 @@ export default function NuevoVenuePage() {
               <label className="label-field">URL pública</label>
               <div className="flex items-center border-2 border-ink/20 focus-within:border-ink">
                 <span className="px-3 text-ink/50 font-mono text-sm bg-ink/5 py-3 border-r-2 border-ink/20 whitespace-nowrap">
-                  cancha.pe/c/
+                  fubito/c/
                 </span>
                 <input
                   required value={form.slug}
@@ -135,7 +135,7 @@ export default function NuevoVenuePage() {
               </p>
               {form.slug && (
                 <p className="text-xs font-mono text-pitch-700 mt-1">
-                  Preview: cancha.pe/c/{form.slug}
+                  Preview: fubito/c/{form.slug}
                 </p>
               )}
             </div>

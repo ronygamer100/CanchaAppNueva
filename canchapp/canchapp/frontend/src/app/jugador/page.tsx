@@ -128,7 +128,7 @@ export default function PlayerPanelPage() {
               </svg>
             </div>
             <span className="font-display font-semibold tracking-tightest">
-              cancha<span className="text-pitch-700">.</span>pe
+              fubito
             </span>
           </Link>
           <div className="flex items-center gap-3">

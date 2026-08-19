@@ -594,7 +594,7 @@ export default function VenuePublicPage() {
       )}
 
       <footer className="py-8 text-center text-sm text-ink/40">
-        Powered by <a href="/" className="underline hover:text-ink">cancha.pe</a>
+        Powered by <a href="/" className="underline hover:text-ink">fubito</a>
       </footer>
     </main>
   );

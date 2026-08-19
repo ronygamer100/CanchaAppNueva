@@ -21,14 +21,13 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'CanchApp — Reserva tu cancha en Arequipa',
+  title: 'fubito — Reserva tu cancha en Arequipa',
   description: 'Reserva canchas sintéticas en Arequipa en segundos. Sin llamadas, sin WhatsApps. Paga con Yape.',
   keywords: ['cancha sintética', 'Arequipa', 'reservar cancha', 'fútbol Arequipa', 'Yape'],
   openGraph: {
-    title: 'CanchApp — Reserva tu cancha en Arequipa',
+    title: 'fubito — Reserva tu cancha en Arequipa',
     description: 'Reserva canchas sintéticas en segundos. Sin llamadas, sin WhatsApps.',
-    url: 'https://cancha-app-nueva-7gc8.vercel.app',
-    siteName: 'CanchApp',
+    siteName: 'fubito',
     locale: 'es_PE',
     type: 'website',
     images: [
@@ -36,13 +35,13 @@ export const metadata: Metadata = {
         url: 'https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&w=1200&h=630&q=80',
         width: 1200,
         height: 630,
-        alt: 'CanchApp - Reserva tu cancha en Arequipa',
+        alt: 'fubito - Reserva tu cancha en Arequipa',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CanchApp — Reserva tu cancha en Arequipa',
+    title: 'fubito — Reserva tu cancha en Arequipa',
     description: 'Reserva canchas sintéticas en segundos. Sin llamadas, sin WhatsApps.',
   },
   icons: {

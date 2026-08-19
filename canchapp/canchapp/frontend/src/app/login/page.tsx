@@ -55,7 +55,7 @@ export default function LoginPage() {
             <div className="w-3 h-3 bg-pitch-900 rounded-full" />
           </div>
           <span className="font-display font-semibold text-xl tracking-tightest">
-            cancha<span className="text-pitch-400">.</span>pe
+            fubito
           </span>
         </Link>
 
