@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_SIZE_MB: int = 5
     GOOGLE_CLIENT_ID: str = ""
+    SUPABASE_URL: str = ""
+    SUPABASE_SECRET_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_STORAGE_BUCKET: str = "uploads"
 
 
 settings = Settings()

@@ -1,5 +1,3 @@
-import os
-import uuid
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
@@ -10,6 +8,7 @@ from app.core.deps import get_current_owner
 from app.models.owner import Owner
 from app.models.venue import Venue
 from app.schemas import VenueCreate, VenueUpdate, VenueOut
+from app.services.storage import save_upload
 
 router = APIRouter(prefix="/api/venues", tags=["venues"])
 
@@ -111,14 +110,12 @@ async def upload_image(
     if len(content) > max_bytes:
         raise HTTPException(status_code=400, detail=f"Archivo demasiado grande (máx {settings.MAX_UPLOAD_SIZE_MB}MB)")
 
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "jpg"
-    filename = f"{kind}_v{venue.id}_{uuid.uuid4().hex}.{ext}"
-    path = os.path.join(settings.UPLOAD_DIR, filename)
-    with open(path, "wb") as f:
-        f.write(content)
-
-    url = f"/uploads/{filename}"
+    url = save_upload(
+        content=content,
+        filename=file.filename,
+        content_type=file.content_type,
+        prefix=f"venues/{venue.id}/{kind}",
+    )
     if kind == "foto":
         venue.foto_url = url
     elif kind == "logo":

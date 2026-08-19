@@ -1,5 +1,3 @@
-import os
-import uuid
 from datetime import date
 from typing import Optional
 
@@ -21,6 +19,7 @@ from app.schemas import (
 )
 from app.services.availability import get_day_availability, slot_is_available
 from app.services.auto_confirm import sweep_auto_confirms
+from app.services.storage import save_upload
 from app.core.deps import get_optional_player
 from app.models.player import Player
 
@@ -212,14 +211,12 @@ async def create_reservation(
     max_bytes = app_settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
     if len(content) > max_bytes:
         raise HTTPException(status_code=400, detail=f"Archivo demasiado grande (máx {app_settings.MAX_UPLOAD_SIZE_MB}MB)")
-    os.makedirs(app_settings.UPLOAD_DIR, exist_ok=True)
-    ext = (yape_screenshot.filename.rsplit(".", 1)[-1].lower()
-           if "." in (yape_screenshot.filename or "") else "jpg")
-    filename = f"yape_{court.id}_{uuid.uuid4().hex}.{ext}"
-    path = os.path.join(app_settings.UPLOAD_DIR, filename)
-    with open(path, "wb") as f:
-        f.write(content)
-    yape_url = f"/uploads/{filename}"
+    yape_url = save_upload(
+        content=content,
+        filename=yape_screenshot.filename,
+        content_type=yape_screenshot.content_type,
+        prefix=f"reservations/court-{court.id}/yape",
+    )
 
     # Calcular auto_confirm_at según política del venue
     from datetime import datetime as _dt, timedelta as _td
