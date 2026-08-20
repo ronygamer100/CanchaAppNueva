@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -15,18 +15,21 @@ from app.schemas import (
     CourtPublicLite,
     DayAvailability,
     ReservationCreatedOut,
+    ReservationPaymentCreate,
     ReservationPublicOut,
 )
 from app.services.availability import get_day_availability, slot_is_available
 from app.services.auto_confirm import sweep_auto_confirms
-from app.services.storage import save_upload
+from app.services.credential_crypto import decrypt_secret
+from app.services.culqi import (
+    CulqiPaymentRejected,
+    CulqiPaymentUncertain,
+    create_yape_charge,
+)
 from app.core.deps import get_optional_player
 from app.models.player import Player
 
 router = APIRouter(prefix="/api/public", tags=["public"])
-
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
-
 
 @router.get("/venues")
 def list_venues_public(
@@ -156,6 +159,18 @@ def get_venue_public(slug: str, db: Session = Depends(get_db)):
             else venue.telefono_publico or venue.owner.whatsapp
         ),
         owner_nombre_negocio=venue.owner.nombre_negocio,
+        culqi_ready=bool(
+            not venue.es_referencial
+            and venue.owner.culqi_public_key
+            and venue.owner.culqi_secret_key_encrypted
+        ),
+        culqi_public_key=(
+            venue.owner.culqi_public_key
+            if not venue.es_referencial
+            and venue.owner.culqi_public_key
+            and venue.owner.culqi_secret_key_encrypted
+            else None
+        ),
         courts=[CourtPublicLite.model_validate(c) for c in canchas_activas],
     )
 
@@ -189,24 +204,20 @@ def get_availability(
     "/venues/{slug}/courts/{court_id}/reservations",
     response_model=ReservationCreatedOut, status_code=201,
 )
-async def create_reservation(
+def create_reservation(
     slug: str,
     court_id: int,
-    fecha: date = Form(...),
-    hora_inicio: str = Form(...),
-    hora_fin: str = Form(...),
-    jugador_nombre: str = Form(...),
-    jugador_whatsapp: str = Form(...),
-    yape_screenshot: UploadFile = File(...),
+    data: ReservationPaymentCreate,
     db: Session = Depends(get_db),
     player: Optional[Player] = Depends(get_optional_player),
 ):
     court = (
-        db.query(Court).join(Venue)
-        .filter(Court.id == court_id, Venue.slug == slug, Court.activa == 1)
+        db.query(Court)
+        .filter(Court.id == court_id, Court.activa == 1)
+        .with_for_update()
         .first()
     )
-    if not court:
+    if not court or court.venue.slug != slug:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
     if not court.venue.reservas_habilitadas:
         raise HTTPException(
@@ -214,63 +225,104 @@ async def create_reservation(
             detail="Esta ficha es referencial y todavía no acepta reservas en fubito",
         )
 
-    from datetime import time as dt_time
-    try:
-        h_ini = dt_time.fromisoformat(hora_inicio)
-        h_fin = dt_time.fromisoformat(hora_fin)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Formato de hora inválido (HH:MM)")
-
-    if fecha < today_peru():
+    if data.fecha < today_peru():
         raise HTTPException(status_code=400, detail="La fecha no puede ser pasada")
 
-    if not slot_is_available(db, court, fecha, h_ini, h_fin):
+    if not slot_is_available(db, court, data.fecha, data.hora_inicio, data.hora_fin):
         raise HTTPException(status_code=409, detail="El horario ya no está disponible")
 
-    if len(jugador_nombre.strip()) < 2:
-        raise HTTPException(status_code=400, detail="Nombre inválido")
+    from datetime import datetime as _dt
+    start = _dt.combine(data.fecha, data.hora_inicio)
+    end = _dt.combine(data.fecha, data.hora_fin)
+    duration_hours = (end - start).total_seconds() / 3600
+    rate = court.adelanto_monto if court.adelanto_monto > 0 else court.precio_hora
+    amount_cents = round(rate * duration_hours * 100)
+    is_demo = court.venue.es_referencial
 
-    if yape_screenshot.content_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Sube JPG, PNG o WEBP.")
-    content = await yape_screenshot.read()
-    if len(content) == 0:
-        raise HTTPException(status_code=400, detail="La captura de Yape es obligatoria")
-    max_bytes = app_settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
-    if len(content) > max_bytes:
-        raise HTTPException(status_code=400, detail=f"Archivo demasiado grande (máx {app_settings.MAX_UPLOAD_SIZE_MB}MB)")
-    yape_url = save_upload(
-        content=content,
-        filename=yape_screenshot.filename,
-        content_type=yape_screenshot.content_type,
-        prefix=f"reservations/court-{court.id}/yape",
-    )
-
-    # Calcular auto_confirm_at según política del venue
-    from datetime import datetime as _dt, timedelta as _td
-    auto_confirm_at = None
-    if court.venue.modo_confirmacion == "auto":
-        auto_confirm_at = _dt.utcnow() + _td(minutes=court.venue.auto_confirm_minutes)
+    secret_key = None
+    if not is_demo:
+        owner = court.venue.owner
+        if not owner.culqi_public_key or not owner.culqi_secret_key_encrypted:
+            raise HTTPException(
+                status_code=409,
+                detail="Este local todavía no ha conectado sus cobros por Yape.",
+            )
+        if not data.culqi_token:
+            raise HTTPException(status_code=400, detail="Falta autorizar el pago con Yape")
+        expected_prefix = f"ype_{owner.culqi_mode}_"
+        if not data.culqi_token.startswith(expected_prefix):
+            raise HTTPException(
+                status_code=400,
+                detail="El pago y las llaves de Culqi pertenecen a ambientes distintos.",
+            )
+        if amount_cents <= 0 or amount_cents > 200000:
+            raise HTTPException(
+                status_code=400,
+                detail="El monto a pagar con Yape debe estar entre S/0.01 y S/2000.",
+            )
+        try:
+            secret_key = decrypt_secret(owner.culqi_secret_key_encrypted)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="El local debe volver a conectar su cuenta Culqi.",
+            ) from exc
 
     reserva = Reservation(
         court_id=court.id,
-        fecha=fecha,
-        hora_inicio=h_ini,
-        hora_fin=h_fin,
-        jugador_nombre=jugador_nombre.strip(),
-        jugador_whatsapp=jugador_whatsapp.strip(),
-        yape_screenshot_url=yape_url,
-        estado=ReservationStatus.PENDIENTE,
-        auto_confirm_at=auto_confirm_at,
+        fecha=data.fecha,
+        hora_inicio=data.hora_inicio,
+        hora_fin=data.hora_fin,
+        jugador_nombre=data.jugador_nombre.strip(),
+        jugador_whatsapp=data.jugador_whatsapp.strip(),
+        jugador_email=str(data.jugador_email).lower(),
+        estado=ReservationStatus.CONFIRMADA if is_demo else ReservationStatus.PENDIENTE,
+        auto_confirm_at=None,
         player_id=player.id if player else None,
+        payment_provider="demo" if is_demo else "culqi_yape",
+        payment_status="demo" if is_demo else "procesando",
+        payment_amount_cents=0 if is_demo else amount_cents,
+        payment_currency="PEN",
     )
     db.add(reserva)
 
     # Si está logueado y aún no tiene whatsapp en perfil, guardarlo
     if player and not player.whatsapp:
-        player.whatsapp = jugador_whatsapp.strip()
+        player.whatsapp = data.jugador_whatsapp.strip()
 
     db.commit()
     db.refresh(reserva)
+
+    if not is_demo and secret_key and data.culqi_token:
+        try:
+            charge = create_yape_charge(
+                secret_key=secret_key,
+                token=data.culqi_token,
+                amount_cents=amount_cents,
+                email=str(data.jugador_email).lower(),
+                customer_name=data.jugador_nombre,
+                customer_phone=data.jugador_whatsapp,
+                reservation_id=reserva.id,
+                venue_name=court.venue.nombre,
+            )
+        except CulqiPaymentRejected as exc:
+            reserva.estado = ReservationStatus.RECHAZADA
+            reserva.payment_status = "rechazado"
+            db.commit()
+            raise HTTPException(status_code=402, detail=str(exc)) from exc
+        except CulqiPaymentUncertain as exc:
+            reserva.payment_status = "verificacion"
+            db.commit()
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+        reserva.estado = ReservationStatus.CONFIRMADA
+        reserva.payment_status = "pagado"
+        reserva.payment_id = charge.charge_id
+        reserva.payment_amount_cents = charge.amount_cents
+        reserva.payment_currency = charge.currency
+        reserva.payment_paid_at = _dt.utcnow()
+        db.commit()
+        db.refresh(reserva)
 
     cancel_url = f"{app_settings.FRONTEND_URL}/r/{reserva.cancel_token}"
     return ReservationCreatedOut(
@@ -280,8 +332,10 @@ async def create_reservation(
         hora_fin=reserva.hora_fin,
         cancel_token=reserva.cancel_token,
         cancel_url=cancel_url,
-        auto_confirm_at=auto_confirm_at,
+        auto_confirm_at=None,
         modo_confirmacion=court.venue.modo_confirmacion,
+        payment_status=reserva.payment_status,
+        payment_amount_cents=reserva.payment_amount_cents,
     )
 
 

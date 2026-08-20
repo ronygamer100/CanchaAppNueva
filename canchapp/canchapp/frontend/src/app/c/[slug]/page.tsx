@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 import {
   ArrowLeft, CalendarDays, Check, CheckCircle2, Clock3, ExternalLink,
-  Info, MapPin, Phone, Upload, UserRound,
+  Info, Mail, MapPin, Phone, ShieldCheck, Smartphone, UserRound,
 } from 'lucide-react';
 import FubitoLogo from '@/components/FubitoLogo';
 import { LoadingScreen } from '@/components/Skeleton';
@@ -19,6 +20,22 @@ import {
 import type {
   CourtPublicLite, DayAvailability, Player, ReservationCreated, Slot, VenuePublic,
 } from '@/lib/types';
+
+
+interface CulqiCheckoutInstance {
+  token?: { id: string };
+  error?: { user_message?: string; merchant_message?: string };
+  culqi: () => void;
+  open: () => void;
+  close: () => void;
+}
+
+
+declare global {
+  interface Window {
+    CulqiCheckout?: new (publicKey: string, config: Record<string, unknown>) => CulqiCheckoutInstance;
+  }
+}
 
 function dateToISO(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -72,8 +89,9 @@ export default function VenuePublicPage() {
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   const [selectedSlots, setSelectedSlots] = useState<Slot[]>([]);
   const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
-  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [culqiLoaded, setCulqiLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<ReservationCreated | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -85,6 +103,7 @@ export default function VenuePublicPage() {
       .then((currentPlayer) => {
         setPlayer(currentPlayer);
         setNombre(currentPlayer.nombre);
+        setEmail(currentPlayer.email);
         if (currentPlayer.whatsapp) setWhatsapp(currentPlayer.whatsapp);
       })
       .catch(() => {});
@@ -167,20 +186,8 @@ export default function VenuePublicPage() {
     return slotEnd === selectionStart || slotStart === selectionEnd;
   }
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    setFormError(null);
-
-    if (!venue?.reservas_habilitadas) {
-      setFormError('Esta cancha todavía no acepta reservas en fubito.');
-      return;
-    }
-    if (!selectedCourt || !startTime || !endTime || selectedSlots.length === 0) return;
-    if (!screenshot) {
-      setFormError('Selecciona una imagen para probar el comprobante.');
-      return;
-    }
-
+  async function submitReservation(culqiToken?: string) {
+    if (!venue || !selectedCourt || !startTime || !endTime) return;
     const normalizedWhatsApp = normalizePeruvianWhatsApp(whatsapp);
     if (!normalizedWhatsApp) {
       setFormError('Escribe un celular peruano de 9 dígitos que empiece con 9.');
@@ -189,17 +196,21 @@ export default function VenuePublicPage() {
 
     setSubmitting(true);
     try {
-      const formData = new FormData();
-      formData.append('fecha', fecha);
-      formData.append('hora_inicio', startTime.slice(0, 5));
-      formData.append('hora_fin', endTime.slice(0, 5));
-      formData.append('jugador_nombre', nombre);
-      formData.append('jugador_whatsapp', normalizedWhatsApp);
-      formData.append('yape_screenshot', screenshot);
-
       const reservation = await apiFetch<ReservationCreated>(
         `/api/public/venues/${slug}/courts/${selectedCourt.id}/reservations`,
-        { method: 'POST', formData, auth: player ? 'player' : undefined },
+        {
+          method: 'POST',
+          auth: player ? 'player' : undefined,
+          body: {
+            fecha,
+            hora_inicio: startTime.slice(0, 5),
+            hora_fin: endTime.slice(0, 5),
+            jugador_nombre: nombre,
+            jugador_whatsapp: normalizedWhatsApp,
+            jugador_email: email,
+            culqi_token: culqiToken,
+          },
+        },
       );
       setSuccess(reservation);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -208,6 +219,90 @@ export default function VenuePublicPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setFormError(null);
+
+    if (!venue?.reservas_habilitadas) {
+      setFormError('Esta cancha todavía no acepta reservas en fubito.');
+      return;
+    }
+    if (!selectedCourt || !startTime || !endTime || selectedSlots.length === 0) return;
+
+    const normalizedWhatsApp = normalizePeruvianWhatsApp(whatsapp);
+    if (!normalizedWhatsApp) {
+      setFormError('Escribe un celular peruano de 9 dígitos que empiece con 9.');
+      return;
+    }
+
+    if (venue.es_referencial) {
+      void submitReservation();
+      return;
+    }
+
+    if (!venue.culqi_ready || !venue.culqi_public_key) {
+      setFormError('Este local todavía no ha activado sus cobros en línea con Yape.');
+      return;
+    }
+    if (!culqiLoaded || !window.CulqiCheckout) {
+      setFormError('El pago con Yape todavía está cargando. Inténtalo en unos segundos.');
+      return;
+    }
+
+    const config = {
+      settings: {
+        title: venue.nombre,
+        currency: 'PEN',
+        amount: Math.round(advanceTotal * 100),
+      },
+      client: { email },
+      options: {
+        lang: 'es',
+        installments: false,
+        modal: true,
+        paymentMethods: {
+          tarjeta: false,
+          yape: true,
+          billetera: false,
+          bancaMovil: false,
+          agente: false,
+          cuotealo: false,
+        },
+        paymentMethodsSort: ['yape'],
+      },
+      appearance: {
+        theme: 'default',
+        hiddenCulqiLogo: false,
+        hiddenBannerContent: false,
+        hiddenBanner: false,
+        hiddenToolBarAmount: false,
+        menuType: 'sidebar',
+        defaultStyle: {
+          bannerColor: '#123C32',
+          buttonBackground: '#FF6B4A',
+          buttonTextColor: '#FFFFFF',
+          priceColor: '#123C32',
+        },
+      },
+    };
+
+    const checkout = new window.CulqiCheckout(venue.culqi_public_key, config);
+    checkout.culqi = () => {
+      if (checkout.token?.id) {
+        const token = checkout.token.id;
+        checkout.close();
+        void submitReservation(token);
+        return;
+      }
+      const message = checkout.error?.user_message
+        || checkout.error?.merchant_message
+        || 'No se pudo autorizar el pago con Yape.';
+      checkout.close();
+      setFormError(message);
+    };
+    checkout.open();
   }
 
   if (error) {
@@ -235,13 +330,15 @@ export default function VenuePublicPage() {
               <CheckCircle2 size={38} strokeWidth={2.5} />
             </div>
             <p className="text-base font-semibold text-pitch-400">
-              {venue.es_referencial ? 'Reserva de prueba creada' : 'Reserva enviada'}
+              {venue.es_referencial ? 'Reserva de prueba creada' : 'Pago aprobado'}
             </p>
             <h1 className="mt-2 font-display text-4xl font-black leading-tight">
-              ¡Tu horario quedó registrado!
+              {venue.es_referencial ? '¡Tu horario quedó registrado!' : '¡Reserva confirmada!'}
             </h1>
             <p className="mt-4 text-white/75">
-              {nombre.split(' ')[0]}, puedes revisar todos los datos antes del partido.
+              {venue.es_referencial
+                ? `${nombre.split(' ')[0]}, puedes revisar todos los datos antes del partido.`
+                : `${nombre.split(' ')[0]}, tu adelanto fue pagado con Yape y el horario ya es tuyo.`}
             </p>
           </div>
 
@@ -274,6 +371,14 @@ export default function VenuePublicPage() {
 
   return (
     <main className={`min-h-screen bg-cream ${selectedSlots.length > 0 ? 'pb-32' : 'pb-12'}`}>
+      {!venue.es_referencial && (
+        <Script
+          src="https://js.culqi.com/checkout-js"
+          strategy="afterInteractive"
+          onReady={() => setCulqiLoaded(true)}
+          onError={() => setFormError('No se pudo cargar el pago con Yape. Revisa tu conexión.')}
+        />
+      )}
       <header className="sticky top-0 z-30 border-b border-forest/10 bg-white/95 backdrop-blur">
         <div className="mx-auto grid min-h-[68px] max-w-4xl grid-cols-[44px_1fr_44px] items-center px-4">
           <Link href="/" className="grid h-11 w-11 place-items-center rounded-lg text-forest" aria-label="Volver">
@@ -540,43 +645,62 @@ export default function VenuePublicPage() {
                 )}
               </div>
 
-              <div className={`rounded-lg p-5 ${venue.es_referencial ? 'bg-sky' : 'bg-pitch-100'}`}>
-                <h3 className="font-display text-xl font-black">
-                  {venue.es_referencial ? 'Comprobante de prueba' : 'Paga el adelanto'}
-                </h3>
-                <p className="mt-2 text-sm text-ink/70">
-                  {venue.es_referencial
-                    ? 'No envíes dinero. Sube cualquier imagen para probar el flujo completo.'
-                    : `Paga S/ ${advanceTotal} por Yape y sube la captura.`}
-                </p>
-                {!venue.es_referencial && venue.yape_qr_url && (
-                  <img
-                    src={venue.yape_qr_url.startsWith('http') ? venue.yape_qr_url : `${API_URL}${venue.yape_qr_url}`}
-                    alt="Código QR de Yape"
-                    className="mt-4 h-36 w-36 rounded-lg bg-white object-contain p-2"
-                  />
-                )}
-
-                <label className="mt-5 flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-lg border border-forest/20 bg-white px-4 py-3 font-semibold text-forest">
-                  <Upload size={21} />
-                  {screenshot ? 'Cambiar imagen' : 'Seleccionar imagen'}
+              <div>
+                <label className="label-field">Tu correo</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-ink/35" size={20} />
                   <input
                     required
-                    type="file"
-                    accept="image/*"
-                    onChange={(event) => setScreenshot(event.target.files?.[0] || null)}
-                    className="sr-only"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="tu@correo.com"
+                    className="input-field !pl-12"
                   />
-                </label>
-                {screenshot && <p className="mt-2 truncate text-sm font-medium">{screenshot.name}</p>}
+                </div>
+                <p className="mt-2 text-sm text-ink/55">Culqi lo usa para confirmar el pago.</p>
+              </div>
+
+              <div className={`rounded-lg p-5 ${venue.es_referencial ? 'bg-sky' : 'bg-pitch-100'}`}>
+                <div className="flex gap-3">
+                  {venue.es_referencial
+                    ? <ShieldCheck className="mt-0.5 shrink-0 text-forest" size={25} />
+                    : <Smartphone className="mt-0.5 shrink-0 text-pitch-700" size={25} />}
+                  <div>
+                    <h3 className="font-display text-xl font-black">
+                      {venue.es_referencial ? 'Reserva de demostración' : 'Pago seguro con Yape'}
+                    </h3>
+                    <p className="mt-2 text-sm text-ink/70">
+                      {venue.es_referencial
+                        ? 'No envíes dinero ni subas imágenes. Esta reserva sirve para probar Fubito.'
+                        : venue.culqi_ready
+                          ? `Pagarás S/ ${advanceTotal} en el checkout de Culqi usando tu número y código de aprobación de Yape.`
+                          : 'Este local todavía está terminando de activar sus pagos en línea.'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {formError && (
                 <p className="rounded-lg bg-clay/10 px-4 py-3 text-sm font-semibold text-clay">{formError}</p>
               )}
 
-              <button type="submit" disabled={submitting} className="btn-accent btn-lg w-full">
-                {submitting ? 'Creando reserva…' : venue.es_referencial ? 'Crear reserva de prueba' : 'Confirmar reserva'}
+              <button
+                type="submit"
+                disabled={submitting || (!venue.es_referencial && (!venue.culqi_ready || !culqiLoaded))}
+                className="btn-accent btn-lg w-full"
+              >
+                {submitting
+                  ? 'Confirmando reserva...'
+                  : venue.es_referencial
+                    ? 'Crear reserva de prueba'
+                    : !venue.culqi_ready
+                      ? 'Pago aún no disponible'
+                      : !culqiLoaded
+                        ? 'Cargando pago con Yape...'
+                        : `Pagar S/ ${advanceTotal} con Yape`}
               </button>
             </form>
           </section>

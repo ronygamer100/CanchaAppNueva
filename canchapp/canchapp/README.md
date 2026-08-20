@@ -2,9 +2,9 @@
 
 Sistema de reservas para canchas sintéticas. Un dueño se registra, crea su
 cancha y comparte un link público (ej. `fubito/c/los-olivos`). Los jugadores
-ven la disponibilidad del día, eligen un slot, pagan el adelanto por Yape y
-suben la captura. El dueño confirma desde su panel con un clic y le llega un
-mensaje de WhatsApp al jugador.
+ven la disponibilidad del día, eligen uno o varios horarios y pagan el adelanto
+con Yape mediante Culqi. El pago llega directamente al comercio Culqi de cada
+dueño y la reserva queda confirmada sin subir capturas.
 
 **Stack:** FastAPI + PostgreSQL + Next.js 14 + Tailwind.
 
@@ -89,15 +89,14 @@ Frontend en `http://localhost:3000`.
 2. Crea tu cuenta de dueño (usa un email de prueba, password ≥ 8 chars,
    whatsapp en formato `+51987654321`).
 3. Te redirige al dashboard. Click "Crear cancha".
-4. Llena nombre, dirección, precio, horarios. Sube una foto y un QR de Yape si
-   tienes (cualquier imagen sirve para probar).
+4. Llena nombre, dirección, precio y horarios. Desde **Pagos y plan**, conecta
+   primero las llaves de prueba de tu propio comercio Culqi.
 5. Vuelve al dashboard. Verás el link público `/c/tu-slug`. Cópialo, ábrelo en
    modo incógnito (para no llevar el token).
-6. En la página pública, elige fecha y un horario libre. Llena nombre/WhatsApp,
-   sube cualquier imagen como "captura", confirma.
-7. Vuelve al dashboard del dueño (sesión normal). Verás la reserva pendiente.
-8. Click "Confirmar" → se abre WhatsApp Web con un mensaje pre-llenado para
-   el jugador. La reserva pasa a "confirmada".
+6. En la página pública, elige fecha y un horario libre. Llena tus datos y abre
+   el checkout de Yape. En las canchas referenciales no se envía dinero.
+7. Cuando Culqi aprueba el pago, la reserva queda confirmada y aparece en el
+   dashboard del dueño.
 
 ## Endpoints clave
 
@@ -125,9 +124,12 @@ Frontend en `http://localhost:3000`.
   con su número personal. Si crece, migrar a WhatsApp Business API.
 - **Slots de 1 hora** calculados en runtime (no materializados en BD). Es
   más simple y soporta cambios de horario sin migraciones.
-- **Sin cobro en línea por ahora**: adelanto manual por Yape + verificación
-  visual del dueño. Es 100x más rápido que integrar pasarela y suficiente para
-  validar la idea.
+- **Cobro por dueño**: cada dueño conecta sus propias llaves Culqi. La llave
+  privada se guarda cifrada en el backend y nunca se expone al navegador.
+- **Yape sin capturas**: Culqi Checkout genera un token temporal y el backend
+  realiza el cargo. Fubito no recibe ni distribuye el dinero de las reservas.
+- **Modelo de Fubito**: 30 días gratis y luego S/50 al mes. El cobro de esa
+  mensualidad todavía está desactivado y se avisará antes de habilitarlo.
 
 ## Próximos pasos (post-MVP)
 
@@ -135,8 +137,8 @@ Frontend en `http://localhost:3000`.
 - Reservas recurrentes ("todos los martes")
 - Múltiples canchas por dueño (ya soportado en BD, falta UI)
 - Reportes mensuales (ingresos estimados, ocupación)
-- Plan de pago: free → S/100/mes después de 60 días
-- Integrar pasarela (Culqi o Izipay) si los dueños lo piden
+- Activar el cobro del plan Fubito de S/50 al terminar la prueba
+- Automatizar devoluciones de Culqi cuando el dueño cancela una reserva pagada
 - Mapa con todas las canchas de fubito (cuando haya 5+)
 
 ## Notas para vender a dueños

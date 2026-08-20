@@ -133,9 +133,12 @@ export default function DashboardPage() {
   }
 
   async function cancelConfirmed(reservation: Reservation) {
+    const paymentNote = reservation.payment_status === 'pagado'
+      ? 'El pago no se devuelve automáticamente. Después deberás gestionar la devolución desde CulqiPanel.'
+      : 'Después coordina la devolución del adelanto con el jugador.';
     if (!confirm(
       `¿Cancelar la reserva confirmada de ${reservation.jugador_nombre}?\n\n` +
-      `Se abrirá WhatsApp para que le avises. El adelanto se devuelve.`
+      `Se abrirá WhatsApp para que le avises. ${paymentNote}`
     )) return;
     try {
       await apiFetch(`/api/reservations/${reservation.id}`, {
@@ -474,9 +477,15 @@ function ReservationCard({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border ${statusStyle[r.estado]}`}>
-            {r.estado}
-          </span>
+          {r.payment_status === 'pagado' ? (
+            <span className="text-[10px] font-mono uppercase px-2 py-0.5 border border-pitch-400/60 bg-pitch-400 text-forest">
+              Yape pagado
+            </span>
+          ) : (
+            <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border ${statusStyle[r.estado]}`}>
+              {r.estado}
+            </span>
+          )}
           {yapeUrl && (
             <a href={yapeUrl} target="_blank"
               className="border border-cream/30 px-2 py-1 text-[10px] font-mono hover:bg-cream/10">

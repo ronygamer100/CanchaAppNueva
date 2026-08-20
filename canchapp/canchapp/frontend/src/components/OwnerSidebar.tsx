@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  BarChart3, Bell, CalendarDays, House, LogOut, Menu, Pencil, Plus, X,
+  BarChart3, Bell, CalendarDays, CreditCard, House, LogOut, Menu, Pencil, Plus, X,
 } from 'lucide-react';
 import FubitoLogo from '@/components/FubitoLogo';
 import { apiFetch, clearToken } from '@/lib/api';
@@ -53,6 +53,10 @@ export default function OwnerSidebar({ children }: OwnerSidebarProps) {
     {
       label: 'Resumen', href: '/dashboard', icon: <House size={21} />,
       active: pathname === '/dashboard', badge: pendingCount,
+    },
+    {
+      label: 'Pagos y plan', href: '/dashboard/pagos', icon: <CreditCard size={21} />,
+      active: pathname === '/dashboard/pagos',
     },
   ];
 
@@ -170,6 +174,12 @@ function SidebarContent({
           <p className="mb-1 text-sm font-semibold text-pitch-400">Tu cuenta</p>
           <p className="truncate font-display text-lg font-extrabold">{owner.nombre_negocio}</p>
           <p className="truncate text-xs text-white/55">{owner.email}</p>
+          <Link
+            href="/dashboard/pagos"
+            className="mt-3 inline-flex min-h-8 items-center rounded-md bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 hover:bg-white/15"
+          >
+            {ownerPlanLabel(owner)}
+          </Link>
         </div>
       )}
 
@@ -219,6 +229,15 @@ function SidebarContent({
       </div>
     </>
   );
+}
+
+function ownerPlanLabel(owner: Owner) {
+  if (owner.subscription_paid_until && new Date(owner.subscription_paid_until).getTime() > Date.now()) {
+    return 'Plan mensual activo';
+  }
+  const milliseconds = new Date(owner.trial_ends_at).getTime() - Date.now();
+  const days = Math.max(0, Math.ceil(milliseconds / 86400000));
+  return days > 0 ? `Prueba gratis · ${days} días` : 'Prueba gratuita finalizada';
 }
 
 function NavSection({ title, children }: { title: string; children: React.ReactNode }) {

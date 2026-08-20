@@ -29,6 +29,27 @@ class OwnerOut(BaseModel):
     email: EmailStr
     nombre_negocio: str
     whatsapp: str
+    trial_started_at: datetime
+    trial_ends_at: datetime
+    subscription_paid_until: Optional[datetime] = None
+
+
+class OwnerBillingOut(BaseModel):
+    plan_status: str
+    trial_started_at: datetime
+    trial_ends_at: datetime
+    subscription_paid_until: Optional[datetime] = None
+    days_remaining: int
+    monthly_price_pen: int
+    billing_collection_enabled: bool
+    culqi_connected: bool
+    culqi_mode: Optional[str] = None
+    culqi_public_key_preview: Optional[str] = None
+
+
+class CulqiConnectionIn(BaseModel):
+    public_key: str = Field(min_length=16, max_length=255)
+    secret_key: str = Field(min_length=16, max_length=255)
 
 
 # ---------- Venue (Negocio) ----------
@@ -126,6 +147,8 @@ class VenuePublicOut(VenueOut):
     """Datos del negocio + sus canchas activas + contacto del dueño."""
     owner_whatsapp: str
     owner_nombre_negocio: str
+    culqi_ready: bool = False
+    culqi_public_key: Optional[str] = None
     courts: List[CourtPublicLite]
 
 
@@ -138,6 +161,11 @@ class ReservationCreate(BaseModel):
     jugador_whatsapp: str = Field(pattern=r"^\+519\d{8}$")
 
 
+class ReservationPaymentCreate(ReservationCreate):
+    jugador_email: EmailStr
+    culqi_token: Optional[str] = Field(default=None, min_length=16, max_length=255)
+
+
 class ReservationOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -147,7 +175,14 @@ class ReservationOut(BaseModel):
     hora_fin: time
     jugador_nombre: str
     jugador_whatsapp: str
+    jugador_email: Optional[EmailStr] = None
     yape_screenshot_url: Optional[str] = None
+    payment_provider: Optional[str] = None
+    payment_status: Optional[str] = None
+    payment_id: Optional[str] = None
+    payment_amount_cents: Optional[int] = None
+    payment_currency: Optional[str] = None
+    payment_paid_at: Optional[datetime] = None
     estado: ReservationStatus
     notas_dueno: Optional[str] = None
     cancel_token: Optional[str] = None
@@ -164,6 +199,8 @@ class ReservationCreatedOut(BaseModel):
     cancel_url: str
     auto_confirm_at: Optional[datetime] = None
     modo_confirmacion: str  # "manual" | "auto"
+    payment_status: Optional[str] = None
+    payment_amount_cents: Optional[int] = None
 
 
 class ReservationPublicOut(BaseModel):

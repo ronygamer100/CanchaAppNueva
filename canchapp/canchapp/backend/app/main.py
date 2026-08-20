@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.core.database import Base, engine
 from app.models import Owner, Venue, Court, Reservation, BlockedSlot  # noqa: F401
 from app.models.player import Player  # noqa: F401
-from app.routers import auth, venues, courts, reservations, public, dashboard, player
+from app.routers import auth, venues, courts, reservations, public, dashboard, player, billing
 
 
 def _check_and_migrate():
@@ -158,6 +158,49 @@ def _check_and_migrate():
         except Exception as e:
             print(f"[migrate] owners google: {e}")
 
+        # Prueba gratuita y credenciales de cobro por cada dueño
+        try:
+            conn.execute(text(
+                "ALTER TABLE owners ADD COLUMN IF NOT EXISTS "
+                "trial_started_at TIMESTAMP"
+            ))
+            conn.execute(text(
+                "ALTER TABLE owners ADD COLUMN IF NOT EXISTS "
+                "trial_ends_at TIMESTAMP"
+            ))
+            conn.execute(text(
+                "ALTER TABLE owners ADD COLUMN IF NOT EXISTS "
+                "subscription_paid_until TIMESTAMP"
+            ))
+            conn.execute(text(
+                "ALTER TABLE owners ADD COLUMN IF NOT EXISTS "
+                "culqi_public_key VARCHAR(255)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE owners ADD COLUMN IF NOT EXISTS "
+                "culqi_secret_key_encrypted VARCHAR(1000)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE owners ADD COLUMN IF NOT EXISTS "
+                "culqi_mode VARCHAR(10)"
+            ))
+            conn.execute(text(
+                "UPDATE owners SET trial_started_at = CURRENT_TIMESTAMP "
+                "WHERE trial_started_at IS NULL"
+            ))
+            conn.execute(text(
+                "UPDATE owners SET trial_ends_at = CURRENT_TIMESTAMP + INTERVAL '30 days' "
+                "WHERE trial_ends_at IS NULL"
+            ))
+            conn.execute(text(
+                "ALTER TABLE owners ALTER COLUMN trial_started_at SET NOT NULL"
+            ))
+            conn.execute(text(
+                "ALTER TABLE owners ALTER COLUMN trial_ends_at SET NOT NULL"
+            ))
+        except Exception as e:
+            print(f"[migrate] owners billing: {e}")
+
         # player_id en reservations
         try:
             conn.execute(text(
@@ -170,6 +213,43 @@ def _check_and_migrate():
             ))
         except Exception as e:
             print(f"[migrate] reservations player_id: {e}")
+
+        # Datos de pago Culqi/Yape; la captura queda solo para reservas históricas
+        try:
+            conn.execute(text(
+                "ALTER TABLE reservations ADD COLUMN IF NOT EXISTS "
+                "jugador_email VARCHAR(255)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE reservations ADD COLUMN IF NOT EXISTS "
+                "payment_provider VARCHAR(30)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE reservations ADD COLUMN IF NOT EXISTS "
+                "payment_status VARCHAR(30)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE reservations ADD COLUMN IF NOT EXISTS "
+                "payment_id VARCHAR(120) UNIQUE"
+            ))
+            conn.execute(text(
+                "ALTER TABLE reservations ADD COLUMN IF NOT EXISTS "
+                "payment_amount_cents INTEGER"
+            ))
+            conn.execute(text(
+                "ALTER TABLE reservations ADD COLUMN IF NOT EXISTS "
+                "payment_currency VARCHAR(3)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE reservations ADD COLUMN IF NOT EXISTS "
+                "payment_paid_at TIMESTAMP"
+            ))
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_reservations_payment_id "
+                "ON reservations(payment_id)"
+            ))
+        except Exception as e:
+            print(f"[migrate] reservations payment: {e}")
 
 
 @asynccontextmanager
@@ -207,6 +287,7 @@ app.include_router(reservations.router)
 app.include_router(public.router)
 app.include_router(dashboard.router)
 app.include_router(player.router)
+app.include_router(billing.router)
 
 
 @app.get("/")

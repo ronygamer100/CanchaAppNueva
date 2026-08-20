@@ -28,7 +28,14 @@ class Reservation(Base):
     hora_fin = Column(Time, nullable=False)
     jugador_nombre = Column(String(120), nullable=False)
     jugador_whatsapp = Column(String(20), nullable=False)
+    jugador_email = Column(String(255), nullable=True)
     yape_screenshot_url = Column(String(500), nullable=True)
+    payment_provider = Column(String(30), nullable=True)
+    payment_status = Column(String(30), nullable=True)
+    payment_id = Column(String(120), nullable=True, unique=True, index=True)
+    payment_amount_cents = Column(Integer, nullable=True)
+    payment_currency = Column(String(3), nullable=True)
+    payment_paid_at = Column(DateTime, nullable=True)
     estado = Column(
         Enum(ReservationStatus, name="reservation_status"),
         default=ReservationStatus.PENDIENTE,

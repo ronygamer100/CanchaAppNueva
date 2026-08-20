@@ -71,6 +71,8 @@ export interface PlayerReservation {
 export interface VenuePublic extends Venue {
   owner_whatsapp: string;
   owner_nombre_negocio: string;
+  culqi_ready: boolean;
+  culqi_public_key?: string | null;
   courts: CourtPublicLite[];
 }
 
@@ -93,7 +95,14 @@ export interface Reservation {
   hora_fin: string;
   jugador_nombre: string;
   jugador_whatsapp: string;
+  jugador_email?: string | null;
   yape_screenshot_url?: string | null;
+  payment_provider?: string | null;
+  payment_status?: string | null;
+  payment_id?: string | null;
+  payment_amount_cents?: number | null;
+  payment_currency?: string | null;
+  payment_paid_at?: string | null;
   estado: ReservationStatus;
   notas_dueno?: string | null;
   cancel_token?: string | null;
@@ -109,6 +118,8 @@ export interface ReservationCreated {
   cancel_url: string;
   auto_confirm_at?: string | null;
   modo_confirmacion: 'manual' | 'auto';
+  payment_status?: string | null;
+  payment_amount_cents?: number | null;
 }
 
 export interface BlockedSlot {
@@ -139,6 +150,22 @@ export interface Owner {
   email: string;
   nombre_negocio: string;
   whatsapp: string;
+  trial_started_at: string;
+  trial_ends_at: string;
+  subscription_paid_until?: string | null;
+}
+
+export interface OwnerBilling {
+  plan_status: 'trial' | 'active' | 'expired';
+  trial_started_at: string;
+  trial_ends_at: string;
+  subscription_paid_until?: string | null;
+  days_remaining: number;
+  monthly_price_pen: number;
+  billing_collection_enabled: boolean;
+  culqi_connected: boolean;
+  culqi_mode?: 'test' | 'live' | null;
+  culqi_public_key_preview?: string | null;
 }
 
 // --- Dashboard avanzado ---
