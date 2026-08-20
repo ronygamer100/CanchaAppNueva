@@ -186,9 +186,14 @@ export default function VenuePublicPage() {
               <path d="M8 20L17 29L32 12" stroke="#0A0A0A" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <h1 className="font-display text-4xl font-bold mb-2">¡Reserva enviada!</h1>
+          <h1 className="font-display text-4xl font-bold mb-2">
+            {venue.es_referencial ? '¡Reserva demo enviada!' : '¡Reserva enviada!'}
+          </h1>
           <p className="text-cream/70 text-lg">
-            {nombre.split(' ')[0]}, tu cancha está separada.
+            {nombre.split(' ')[0]},{' '}
+            {venue.es_referencial
+              ? 'tu horario de prueba quedó registrado.'
+              : 'tu cancha está separada.'}
           </p>
         </div>
 
@@ -582,8 +587,18 @@ export default function VenuePublicPage() {
 
               <div className="md:col-span-2">
                 <div className="card !bg-cream !text-ink mb-4">
-                  <p className="eyebrow mb-3">Paso 1 · Paga el adelanto</p>
-                  {venue.yape_qr_url ? (
+                  <p className="eyebrow mb-3">
+                    Paso 1 · {venue.es_referencial ? 'Pago de prueba' : 'Paga el adelanto'}
+                  </p>
+                  {venue.es_referencial ? (
+                    <div>
+                      <p className="font-display text-2xl mb-2">Demo: S/ {adelantoTotal}</p>
+                      <p className="text-sm text-ink/70">
+                        Usa cualquier imagen de prueba como comprobante. No envíes dinero
+                        a ningún número: esta reserva solo sirve para probar fubito.
+                      </p>
+                    </div>
+                  ) : venue.yape_qr_url ? (
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                       <img
                         src={venue.yape_qr_url.startsWith('http') ? venue.yape_qr_url : `${API_URL}${venue.yape_qr_url}`}
@@ -609,14 +624,17 @@ export default function VenuePublicPage() {
 
               <div className="md:col-span-2">
                 <label className="label-field !text-pitch-400">
-                  Paso 2 · Sube la captura del Yape <span className="text-clay">*</span>
+                  Paso 2 · Sube {venue.es_referencial ? 'una captura de prueba' : 'la captura del Yape'}{' '}
+                  <span className="text-clay">*</span>
                 </label>
                 <input required type="file" accept="image/*"
                   onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
                   className="block w-full text-cream file:bg-pitch-400 file:text-ink file:border-0 file:px-4 file:py-2 file:font-semibold file:mr-4 file:cursor-pointer" />
                 {screenshot && <p className="text-pitch-400 text-xs mt-2 font-mono">✓ {screenshot.name}</p>}
                 <p className="text-cream/50 text-xs mt-2">
-                  Sin captura del pago no se puede confirmar la reserva.
+                  {venue.es_referencial
+                    ? 'La imagen permite probar también la carga de comprobantes.'
+                    : 'Sin captura del pago no se puede confirmar la reserva.'}
                 </p>
               </div>
 
@@ -628,7 +646,11 @@ export default function VenuePublicPage() {
 
               <div className="md:col-span-2 flex flex-col sm:flex-row sm:flex-wrap gap-3 pt-2">
                 <button type="submit" disabled={submitting} className="btn-accent w-full sm:w-auto">
-                  {submitting ? 'Enviando…' : `Confirmar reserva (S/ ${adelantoTotal})`}
+                  {submitting
+                    ? 'Enviando…'
+                    : venue.es_referencial
+                      ? 'Crear reserva demo'
+                      : `Confirmar reserva (S/ ${adelantoTotal})`}
                 </button>
                 <button type="button"
                   onClick={() => { setSelectedSlots([]); setFormError(null); }}

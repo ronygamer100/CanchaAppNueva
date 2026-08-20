@@ -150,7 +150,11 @@ def get_venue_public(slug: str, db: Session = Depends(get_db)):
         fuente_url=venue.fuente_url,
         es_referencial=venue.es_referencial,
         reservas_habilitadas=venue.reservas_habilitadas,
-        owner_whatsapp=venue.telefono_publico or venue.owner.whatsapp,
+        owner_whatsapp=(
+            venue.owner.whatsapp
+            if venue.es_referencial
+            else venue.telefono_publico or venue.owner.whatsapp
+        ),
         owner_nombre_negocio=venue.owner.nombre_negocio,
         courts=[CourtPublicLite.model_validate(c) for c in canchas_activas],
     )

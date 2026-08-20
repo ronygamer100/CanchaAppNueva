@@ -74,8 +74,9 @@ def seed_arequipa_catalog() -> None:
                 f"{item['lat']},{item['lng']}"
             )
             venue.es_referencial = True
-            venue.reservas_habilitadas = False
-            venue.modo_confirmacion = "manual"
+            venue.reservas_habilitadas = True
+            venue.modo_confirmacion = "auto"
+            venue.auto_confirm_minutes = 15
 
             for court_data in item["courts"]:
                 court = (
