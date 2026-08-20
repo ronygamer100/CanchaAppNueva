@@ -1,7 +1,8 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import { AREQUIPA_CENTER } from './MapPicker';
 
 export interface VenueMapPin {
@@ -30,6 +31,7 @@ export default function VenuesMap({ venues, apiUrl, height = 480 }: VenuesMapPro
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -139,13 +141,24 @@ export default function VenuesMap({ venues, apiUrl, height = 480 }: VenuesMapPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venues.length]);
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    if (isExpanded) document.body.style.overflow = 'hidden';
+
+    const timer = window.setTimeout(() => mapRef.current?.invalidateSize(), 50);
+    return () => {
+      window.clearTimeout(timer);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isExpanded]);
+
   if (venues.length === 0) {
     return (
       <div
         style={{ '--map-height': `${height}px` } as CSSProperties}
-        className="responsive-map border-2 border-ink/20 grid place-items-center bg-ink/5 px-4 text-center"
+        className="responsive-map border border-forest/15 grid place-items-center bg-ink/5 px-4 text-center"
       >
-        <p className="font-mono text-sm text-ink/40">
+        <p className="text-sm text-ink/50">
           No hay canchas con ubicación geográfica todavía
         </p>
       </div>
@@ -153,11 +166,24 @@ export default function VenuesMap({ venues, apiUrl, height = 480 }: VenuesMapPro
   }
 
   return (
-    <div
-      ref={containerRef}
-      style={{ '--map-height': `${height}px` } as CSSProperties}
-      className="responsive-map border-2 border-ink"
-    />
+    <div className={isExpanded ? 'fixed inset-0 z-[70] bg-white' : 'relative'}>
+      <div
+        ref={containerRef}
+        style={{ '--map-height': `${height}px` } as CSSProperties}
+        className={`responsive-map border border-forest/20 ${isExpanded ? 'map-expanded' : ''}`}
+      />
+      <button
+        type="button"
+        onClick={() => setIsExpanded((value) => !value)}
+        className="absolute right-3 top-3 z-[1000] grid h-12 w-12 place-items-center rounded-lg border border-forest/15 bg-white text-forest shadow-md sm:hidden"
+        aria-label={isExpanded ? 'Reducir mapa' : 'Ampliar mapa'}
+        title={isExpanded ? 'Reducir mapa' : 'Ampliar mapa'}
+      >
+        {isExpanded
+          ? <Minimize2 className="h-5 w-5" aria-hidden="true" />
+          : <Maximize2 className="h-5 w-5" aria-hidden="true" />}
+      </button>
+    </div>
   );
 }
 

@@ -134,6 +134,11 @@ button, input, select, textarea {
   height: 100%;
 }
 
+.responsive-map img.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+}
+
 .responsive-map .leaflet-popup-content-wrapper {
   border-radius: 8px;
 }
@@ -142,10 +147,24 @@ button, input, select, textarea {
   max-width: calc(100vw - 72px);
 }
 
+.responsive-map.map-expanded {
+  height: 100dvh;
+  min-height: 100dvh;
+  border: 0;
+  border-radius: 0;
+}
+
 @media (max-width: 640px) {
   .responsive-map {
-    height: min(var(--map-height), 56vh);
-    min-height: 280px;
+    height: min(var(--map-height), 38vh);
+    min-height: 260px;
+    max-height: 320px;
+  }
+
+  .responsive-map.map-expanded {
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: none;
   }
 }
 
