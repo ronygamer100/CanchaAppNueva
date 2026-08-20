@@ -39,7 +39,7 @@ def create_yape_charge(
         "currency_code": "PEN",
         "email": email,
         "source_id": token,
-        "description": f"Adelanto de reserva en {venue_name}"[:80],
+        "description": f"Pago total de reserva en {venue_name}"[:80],
         "antifraud_details": {
             "country_code": "PE",
             "first_name": name_parts[0],

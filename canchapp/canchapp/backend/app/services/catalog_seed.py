@@ -90,7 +90,7 @@ def seed_arequipa_catalog() -> None:
 
                 court.tipo = court_data["tipo"]
                 court.precio_hora = court_data["precio_hora"]
-                court.adelanto_monto = court_data["adelanto_monto"]
+                court.adelanto_monto = court_data["precio_hora"]
                 court.amenities = court_data["amenities"]
                 court.activa = 1
 

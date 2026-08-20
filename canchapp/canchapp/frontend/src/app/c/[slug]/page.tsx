@@ -139,7 +139,6 @@ export default function VenuePublicPage() {
   }, [fecha, selectedCourt, slug, venue?.reservas_habilitadas]);
 
   const hours = selectedSlots.length;
-  const advanceTotal = selectedCourt ? selectedCourt.adelanto_monto * hours : 0;
   const priceTotal = selectedCourt ? selectedCourt.precio_hora * hours : 0;
   const startTime = selectedSlots[0]?.hora_inicio;
   const endTime = selectedSlots[selectedSlots.length - 1]?.hora_fin;
@@ -242,6 +241,10 @@ export default function VenuePublicPage() {
       return;
     }
 
+    if (venue.payment_mode !== 'full') {
+      setFormError('El sistema de pago total se está actualizando. Inténtalo nuevamente en unos minutos.');
+      return;
+    }
     if (!venue.culqi_ready || !venue.culqi_public_key) {
       setFormError('Este local todavía no ha activado sus cobros en línea con Yape.');
       return;
@@ -255,7 +258,7 @@ export default function VenuePublicPage() {
       settings: {
         title: venue.nombre,
         currency: 'PEN',
-        amount: Math.round(advanceTotal * 100),
+        amount: Math.round(priceTotal * 100),
       },
       client: { email },
       options: {
@@ -338,7 +341,7 @@ export default function VenuePublicPage() {
             <p className="mt-4 text-white/75">
               {venue.es_referencial
                 ? `${nombre.split(' ')[0]}, puedes revisar todos los datos antes del partido.`
-                : `${nombre.split(' ')[0]}, tu adelanto fue pagado con Yape y el horario ya es tuyo.`}
+                : `${nombre.split(' ')[0]}, pagaste la reserva completa con Yape y el horario ya es tuyo.`}
             </p>
           </div>
 
@@ -349,8 +352,15 @@ export default function VenuePublicPage() {
             <ReservationDetail
               label="Horario"
               value={`${formatHora(success.hora_inicio)} a ${formatHora(success.hora_fin)}`}
-              last
+              last={venue.es_referencial}
             />
+            {!venue.es_referencial && (
+              <ReservationDetail
+                label="Pago total"
+                value={`S/ ${((success.payment_amount_cents ?? Math.round(priceTotal * 100)) / 100).toFixed(2)}`}
+                last
+              />
+            )}
           </section>
 
           <div className="mt-6 space-y-3">
@@ -610,8 +620,8 @@ export default function VenuePublicPage() {
 
             <div className="mt-6 grid grid-cols-3 gap-3 rounded-lg bg-sky p-4 text-center">
               <SummaryValue label="Duración" value={`${hours}h`} />
-              <SummaryValue label="Total" value={`S/ ${priceTotal}`} />
-              <SummaryValue label="Adelanto" value={`S/ ${advanceTotal}`} accent />
+              <SummaryValue label="Precio/hora" value={`S/ ${selectedCourt.precio_hora}`} />
+              <SummaryValue label="Total a pagar" value={`S/ ${priceTotal}`} accent />
             </div>
 
             <form onSubmit={handleSubmit} className="mt-7 space-y-6">
@@ -676,7 +686,7 @@ export default function VenuePublicPage() {
                       {venue.es_referencial
                         ? 'No envíes dinero ni subas imágenes. Esta reserva sirve para probar Fubito.'
                         : venue.culqi_ready
-                          ? `Pagarás S/ ${advanceTotal} en el checkout de Culqi usando tu número y código de aprobación de Yape.`
+                          ? `Pagarás el total de S/ ${priceTotal} en Culqi usando tu número y código de aprobación de Yape. No quedará saldo pendiente.`
                           : 'Este local todavía está terminando de activar sus pagos en línea.'}
                     </p>
                   </div>
@@ -700,7 +710,7 @@ export default function VenuePublicPage() {
                       ? 'Pago aún no disponible'
                       : !culqiLoaded
                         ? 'Cargando pago con Yape...'
-                        : `Pagar S/ ${advanceTotal} con Yape`}
+                        : `Pagar S/ ${priceTotal} con Yape`}
               </button>
             </form>
           </section>

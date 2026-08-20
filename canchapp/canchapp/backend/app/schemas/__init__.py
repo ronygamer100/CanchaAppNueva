@@ -107,19 +107,20 @@ class CourtBase(BaseModel):
     nombre: str = Field(min_length=1, max_length=120)
     tipo: Optional[str] = Field(default=None, max_length=60)
     precio_hora: float = Field(gt=0)
-    adelanto_monto: float = Field(ge=0)
     amenities: List[str] = Field(default_factory=list)
 
 
 class CourtCreate(CourtBase):
-    pass
+    # Compatibilidad temporal con clientes anteriores. El servidor siempre cobra
+    # y guarda el precio completo por hora.
+    adelanto_monto: Optional[float] = Field(default=None, ge=0)
 
 
 class CourtUpdate(BaseModel):
     nombre: Optional[str] = None
     tipo: Optional[str] = None
-    precio_hora: Optional[float] = None
-    adelanto_monto: Optional[float] = None
+    precio_hora: Optional[float] = Field(default=None, gt=0)
+    adelanto_monto: Optional[float] = Field(default=None, ge=0)
     activa: Optional[int] = None
     amenities: Optional[List[str]] = None
 
@@ -129,6 +130,7 @@ class CourtOut(CourtBase):
     id: int
     venue_id: int
     activa: int
+    adelanto_monto: float
 
 
 # ---------- Vista pública combinada ----------
@@ -149,6 +151,7 @@ class VenuePublicOut(VenueOut):
     owner_nombre_negocio: str
     culqi_ready: bool = False
     culqi_public_key: Optional[str] = None
+    payment_mode: str = "full"
     courts: List[CourtPublicLite]
 
 
@@ -215,6 +218,11 @@ class ReservationPublicOut(BaseModel):
     court_nombre: str
     court_tipo: Optional[str] = None
     direccion: str
+    monto_total: float
+    monto_pagado: float
+    payment_status: Optional[str] = None
+
+    # Compatibilidad con versiones anteriores del frontend.
     adelanto_monto: float
     horas: int
 

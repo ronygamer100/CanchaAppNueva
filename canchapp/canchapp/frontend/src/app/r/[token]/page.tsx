@@ -59,6 +59,9 @@ export default function CancelacionPage() {
   const yaCancelada = reserva.estado === 'cancelada';
   const yaRechazada = reserva.estado === 'rechazada';
   const finalizada = yaCancelada || yaRechazada;
+  const esDemo = reserva.payment_status === 'demo';
+  const montoPagado = reserva.monto_pagado ?? reserva.adelanto_monto ?? 0;
+  const montoTotal = reserva.monto_total ?? montoPagado;
 
   return (
     <main className="min-h-screen">
@@ -93,8 +96,10 @@ export default function CancelacionPage() {
             <p className="font-medium">{reserva.jugador_nombre}</p>
           </div>
           <div className="card">
-            <p className="eyebrow mb-2">Adelanto pagado</p>
-            <p className="font-display text-xl">S/ {reserva.adelanto_monto}</p>
+            <p className="eyebrow mb-2">{esDemo ? 'Valor referencial' : 'Pago realizado'}</p>
+            <p className="font-display text-xl">
+              S/ {(esDemo ? montoTotal : montoPagado).toFixed(2)}
+            </p>
           </div>
         </div>
 
@@ -102,7 +107,7 @@ export default function CancelacionPage() {
           <div className="card-brut bg-cream">
             <p className="text-ink/70">
               {yaCancelada
-                ? 'Tu reserva fue cancelada. El adelanto no se reembolsa.'
+                ? 'Tu reserva fue cancelada. El pago no se reembolsa automáticamente.'
                 : 'Tu reserva fue rechazada por el dueño. Debería haberte contactado por WhatsApp.'}
             </p>
           </div>
@@ -110,7 +115,7 @@ export default function CancelacionPage() {
           <div className="card-brut bg-cream">
             <p className="eyebrow !text-clay mb-3">Cancelar reserva</p>
             <p className="text-ink/80 mb-4">
-              Si cancelas, <strong>el adelanto no se reembolsa</strong>. Solo se puede cancelar hasta 2 horas antes del inicio.
+              Si cancelas, <strong>el pago no se devuelve automáticamente</strong>. Solo se puede cancelar hasta 2 horas antes del inicio.
             </p>
             {!confirming ? (
               <button onClick={() => setConfirming(true)}

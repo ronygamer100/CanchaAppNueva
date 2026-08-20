@@ -77,7 +77,7 @@ export default function PaymentsPage() {
         <p className="eyebrow">Tu cuenta</p>
         <h1 className="mt-1 font-display text-4xl font-black">Pagos y plan</h1>
         <p className="mt-2 max-w-2xl text-ink/65">
-          Aquí controlas lo que paga tu negocio por usar Fubito y dónde recibes los adelantos de tus clientes.
+          Aquí controlas lo que paga tu negocio por usar Fubito y dónde recibes los pagos completos de tus reservas.
         </p>
 
         {billing && (

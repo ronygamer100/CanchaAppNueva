@@ -142,6 +142,16 @@ def _check_and_migrate():
         except Exception as e:
             print(f"[migrate] courts amenities: {e}")
 
+        # El cobro pasó de adelanto configurable a pago total. Se conserva la
+        # columna para compatibilidad durante el despliegue.
+        try:
+            conn.execute(text(
+                "UPDATE courts SET adelanto_monto = precio_hora "
+                "WHERE adelanto_monto IS DISTINCT FROM precio_hora"
+            ))
+        except Exception as e:
+            print(f"[migrate] courts full payment: {e}")
+
         # google_id + avatar_url en owners; password_hash pasa a nullable
         try:
             conn.execute(text(

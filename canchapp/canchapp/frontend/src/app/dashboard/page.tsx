@@ -135,7 +135,7 @@ export default function DashboardPage() {
   async function cancelConfirmed(reservation: Reservation) {
     const paymentNote = reservation.payment_status === 'pagado'
       ? 'El pago no se devuelve automáticamente. Después deberás gestionar la devolución desde CulqiPanel.'
-      : 'Después coordina la devolución del adelanto con el jugador.';
+      : 'Después coordina la devolución del pago con el jugador.';
     if (!confirm(
       `¿Cancelar la reserva confirmada de ${reservation.jugador_nombre}?\n\n` +
       `Se abrirá WhatsApp para que le avises. ${paymentNote}`
@@ -203,7 +203,7 @@ export default function DashboardPage() {
               <div className="grid sm:grid-cols-3 gap-4 text-left mb-8">
                 {[
                   { n: '1', title: 'Registra tu negocio', desc: 'Nombre, dirección, horario y foto del local.' },
-                  { n: '2', title: 'Agrega tus canchas', desc: 'Tipo, precio por hora y adelanto requerido.' },
+                  { n: '2', title: 'Agrega tus canchas', desc: 'Tipo y precio por hora. El jugador pagará el total.' },
                   { n: '3', title: 'Comparte el link', desc: 'Pégalo en Instagram, WhatsApp o Google Maps.' },
                 ].map((s) => (
                   <div key={s.n} className="border-t border-forest/15 pt-4 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
@@ -325,7 +325,7 @@ export default function DashboardPage() {
                         )}
                         <div className="flex items-center justify-between text-sm font-mono">
                           <span>S/{c.precio_hora}/h</span>
-                          <span className="text-ink/50">adelanto S/{c.adelanto_monto}</span>
+                          <span className="text-ink/50">pago completo</span>
                         </div>
                       </article>
                     );

@@ -89,6 +89,17 @@ def _horas_reserva(r: Reservation) -> int:
     return int((fin - inicio).total_seconds() // 3600)
 
 
+def _monto_pagado(r: Reservation, court: Court) -> float:
+    if r.payment_status == "pagado" and r.payment_amount_cents is not None:
+        return round(r.payment_amount_cents / 100, 2)
+    if r.payment_provider == "demo" or r.payment_status in {
+        "rechazado", "procesando", "verificacion",
+    }:
+        return 0.0
+    # Reservas históricas anteriores a Culqi no guardaban el importe pagado.
+    return round(court.precio_hora * _horas_reserva(r), 2)
+
+
 def _monday_of(d: date) -> date:
     return d - timedelta(days=d.weekday())
 
@@ -158,7 +169,7 @@ def _build_metrics(
 
     for r, court in rows:
         horas = _horas_reserva(r)
-        monto = court.precio_hora * horas
+        monto = _monto_pagado(r, court)
         ingresos_por_dia[r.fecha] += monto
         ingresos_por_cancha[court.id] += monto
         total_ingresos += monto
@@ -379,7 +390,7 @@ def export_metrics_xlsx(
     headers = [
         "Fecha", "Hora inicio", "Hora fin", "Horas",
         "Cancha", "Jugador", "WhatsApp", "Estado",
-        "Monto cancha (S/)", "Adelanto (S/)", "Creada el",
+        "Monto total (S/)", "Pago recibido (S/)", "Creada el",
     ]
     for col, h in enumerate(headers, start=1):
         cell = ws2.cell(row=1, column=col, value=h)
@@ -390,7 +401,7 @@ def export_metrics_xlsx(
     for i, (r, court) in enumerate(todas, start=2):
         horas = _horas_reserva(r)
         monto = court.precio_hora * horas
-        adelanto = court.adelanto_monto * horas
+        pago_recibido = _monto_pagado(r, court)
         ws2.cell(row=i, column=1, value=r.fecha.strftime("%d/%m/%Y"))
         ws2.cell(row=i, column=2, value=r.hora_inicio.strftime("%H:%M"))
         ws2.cell(row=i, column=3, value=r.hora_fin.strftime("%H:%M"))
@@ -400,7 +411,7 @@ def export_metrics_xlsx(
         ws2.cell(row=i, column=7, value=r.jugador_whatsapp)
         ws2.cell(row=i, column=8, value=r.estado.value)
         ws2.cell(row=i, column=9, value=monto).number_format = '"S/ "#,##0.00'
-        ws2.cell(row=i, column=10, value=adelanto).number_format = '"S/ "#,##0.00'
+        ws2.cell(row=i, column=10, value=pago_recibido).number_format = '"S/ "#,##0.00'
         ws2.cell(row=i, column=11, value=r.created_at.strftime("%d/%m/%Y %H:%M"))
 
         # Color de fila según estado
@@ -425,11 +436,11 @@ def export_metrics_xlsx(
         total_row = len(todas) + 2
         ws2.cell(row=total_row + 1, column=8, value="TOTAL CONFIRMADAS").font = bold
         total_confirmadas = sum(
-            court.precio_hora * _horas_reserva(r)
+            _monto_pagado(r, court)
             for r, court in todas if r.estado == ReservationStatus.CONFIRMADA
         )
-        ws2.cell(row=total_row + 1, column=9, value=total_confirmadas).number_format = '"S/ "#,##0.00'
-        ws2.cell(row=total_row + 1, column=9).font = bold
+        ws2.cell(row=total_row + 1, column=10, value=total_confirmadas).number_format = '"S/ "#,##0.00'
+        ws2.cell(row=total_row + 1, column=10).font = bold
 
     # Serializar
     buf = BytesIO()

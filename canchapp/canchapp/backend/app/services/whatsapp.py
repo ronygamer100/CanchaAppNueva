@@ -25,7 +25,7 @@ def build_rejection_message(
     )
     if motivo:
         base += f" Motivo: {motivo}"
-    base += " Te devolveremos el adelanto. Disculpa."
+    base += " Coordinaremos contigo la devolución del pago. Disculpa."
     return base
 
 
@@ -39,5 +39,5 @@ def build_owner_cancel_message(
     )
     if motivo:
         base += f" Motivo: {motivo}"
-    base += " Te devolveremos el adelanto íntegramente. Lamentamos los inconvenientes."
+    base += " Te devolveremos el pago íntegramente. Lamentamos los inconvenientes."
     return base

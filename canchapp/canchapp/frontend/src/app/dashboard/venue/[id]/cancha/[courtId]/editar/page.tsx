@@ -15,7 +15,7 @@ export default function EditarCanchaPage() {
   const [court, setCourt] = useState<Court | null>(null);
   const [form, setForm] = useState<{
     nombre: string; tipo: string; precio_hora: number;
-    adelanto_monto: number; activa: number;
+    activa: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,7 @@ export default function EditarCanchaPage() {
         setCourt(c);
         setForm({
           nombre: c.nombre, tipo: c.tipo || '',
-          precio_hora: c.precio_hora, adelanto_monto: c.adelanto_monto,
+          precio_hora: c.precio_hora,
           activa: c.activa,
         });
       })
@@ -108,13 +108,7 @@ export default function EditarCanchaPage() {
                 value={form.precio_hora}
                 onChange={(e) => update('precio_hora', Number(e.target.value))}
                 className="input-field font-mono" />
-            </div>
-            <div>
-              <label className="label-field">Adelanto (S/)</label>
-              <input required type="number" min={0}
-                value={form.adelanto_monto}
-                onChange={(e) => update('adelanto_monto', Number(e.target.value))}
-                className="input-field font-mono" />
+              <p className="text-xs text-ink/50 mt-1">El jugador pagará el total al reservar.</p>
             </div>
             <div className="md:col-span-2">
               <label className="flex items-center gap-3 cursor-pointer">

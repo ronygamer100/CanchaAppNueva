@@ -136,7 +136,7 @@ export default function CalendarioPage() {
     const estado = action === 'confirm' ? 'confirmada' : action === 'reject' ? 'rechazada' : 'cancelada';
 
     if (action === 'cancel' && !confirm(
-      `¿Cancelar la reserva confirmada de ${selected.jugador_nombre}?\n\nSe abrirá WhatsApp para avisarle. El adelanto se devuelve.`
+      `¿Cancelar la reserva confirmada de ${selected.jugador_nombre}?\n\nSe abrirá WhatsApp para avisarle. Deberás devolver el pago completo desde CulqiPanel.`
     )) return;
 
     try {

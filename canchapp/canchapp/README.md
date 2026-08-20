@@ -2,7 +2,7 @@
 
 Sistema de reservas para canchas sintéticas. Un dueño se registra, crea su
 cancha y comparte un link público (ej. `fubito/c/los-olivos`). Los jugadores
-ven la disponibilidad del día, eligen uno o varios horarios y pagan el adelanto
+ven la disponibilidad del día, eligen uno o varios horarios y pagan la reserva completa
 con Yape mediante Culqi. El pago llega directamente al comercio Culqi de cada
 dueño y la reserva queda confirmada sin subir capturas.
 

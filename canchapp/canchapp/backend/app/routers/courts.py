@@ -29,7 +29,12 @@ def create_court(
     owner: Owner = Depends(get_current_owner),
 ):
     _venue_or_404(db, venue_id, owner)
-    court = Court(venue_id=venue_id, **data.model_dump())
+    payload = data.model_dump(exclude={"adelanto_monto"})
+    court = Court(
+        venue_id=venue_id,
+        adelanto_monto=data.precio_hora,
+        **payload,
+    )
     db.add(court)
     db.commit()
     db.refresh(court)
@@ -72,8 +77,11 @@ def update_court(
     ).first()
     if not court:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
-    for k, v in data.model_dump(exclude_unset=True).items():
+    changes = data.model_dump(exclude_unset=True, exclude={"adelanto_monto"})
+    for k, v in changes.items():
         setattr(court, k, v)
+    if "precio_hora" in changes:
+        court.adelanto_monto = court.precio_hora
     db.commit()
     db.refresh(court)
     return court

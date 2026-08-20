@@ -17,7 +17,6 @@ export default function NuevaCanchaPage() {
     nombre: '',
     tipo: '',
     precio_hora: 60,
-    adelanto_monto: 20,
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,7 +62,7 @@ export default function NuevaCanchaPage() {
       const cs = await apiFetch<Court[]>(`/api/venues/${venueId}/courts`, { auth: true });
       setExisting(cs);
       const next = String.fromCharCode(65 + cs.length);
-      setForm({ nombre: `Cancha ${next}`, tipo: '', precio_hora: 60, adelanto_monto: 20 });
+      setForm({ nombre: `Cancha ${next}`, tipo: '', precio_hora: 60 });
     } catch (err) {
       setError((err as Error).message);
     } finally { setLoading(false); }
@@ -119,15 +118,7 @@ export default function NuevaCanchaPage() {
                 value={form.precio_hora}
                 onChange={(e) => update('precio_hora', Number(e.target.value))}
                 className="input-field font-mono" />
-            </div>
-
-            <div>
-              <label className="label-field">Adelanto requerido (S/)</label>
-              <input required type="number" min={0}
-                value={form.adelanto_monto}
-                onChange={(e) => update('adelanto_monto', Number(e.target.value))}
-                className="input-field font-mono" />
-              <p className="text-xs text-ink/50 mt-1">Por hora reservada.</p>
+              <p className="text-xs text-ink/50 mt-1">El jugador pagará el total al reservar.</p>
             </div>
           </div>
 

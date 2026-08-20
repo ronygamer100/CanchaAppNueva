@@ -30,7 +30,6 @@ export interface Court {
   nombre: string;
   tipo?: string | null;
   precio_hora: number;
-  adelanto_monto: number;
   activa: number;
   amenities: string[];
 }
@@ -40,7 +39,6 @@ export interface CourtPublicLite {
   nombre: string;
   tipo?: string | null;
   precio_hora: number;
-  adelanto_monto: number;
   amenities: string[];
 }
 
@@ -73,6 +71,7 @@ export interface VenuePublic extends Venue {
   owner_nombre_negocio: string;
   culqi_ready: boolean;
   culqi_public_key?: string | null;
+  payment_mode?: 'full';
   courts: CourtPublicLite[];
 }
 
@@ -141,7 +140,10 @@ export interface ReservationPublic {
   court_nombre: string;
   court_tipo?: string | null;
   direccion: string;
-  adelanto_monto: number;
+  monto_total: number;
+  monto_pagado: number;
+  payment_status?: string | null;
+  adelanto_monto?: number;
   horas: number;
 }
 

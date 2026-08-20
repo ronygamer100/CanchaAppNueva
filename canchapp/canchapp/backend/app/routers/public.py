@@ -26,6 +26,7 @@ from app.services.culqi import (
     CulqiPaymentUncertain,
     create_yape_charge,
 )
+from app.services.payments import calculate_full_payment_cents
 from app.core.deps import get_optional_player
 from app.models.player import Player
 
@@ -232,11 +233,12 @@ def create_reservation(
         raise HTTPException(status_code=409, detail="El horario ya no está disponible")
 
     from datetime import datetime as _dt
-    start = _dt.combine(data.fecha, data.hora_inicio)
-    end = _dt.combine(data.fecha, data.hora_fin)
-    duration_hours = (end - start).total_seconds() / 3600
-    rate = court.adelanto_monto if court.adelanto_monto > 0 else court.precio_hora
-    amount_cents = round(rate * duration_hours * 100)
+    amount_cents = calculate_full_payment_cents(
+        court.precio_hora,
+        data.fecha,
+        data.hora_inicio,
+        data.hora_fin,
+    )
     is_demo = court.venue.es_referencial
 
     secret_key = None
@@ -345,6 +347,16 @@ def _reservation_public(reserva: Reservation) -> ReservationPublicOut:
     inicio = dt.combine(reserva.fecha, reserva.hora_inicio)
     fin = dt.combine(reserva.fecha, reserva.hora_fin)
     horas = int((fin - inicio).total_seconds() // 3600)
+    monto_total = round(reserva.court.precio_hora * horas, 2)
+    if reserva.payment_provider == "demo":
+        monto_pagado = 0.0
+    elif reserva.payment_status == "pagado" and reserva.payment_amount_cents is not None:
+        monto_pagado = round(reserva.payment_amount_cents / 100, 2)
+    elif reserva.payment_status in {"rechazado", "procesando", "verificacion"}:
+        monto_pagado = 0.0
+    else:
+        # Reservas históricas anteriores a Culqi solo guardaban el adelanto.
+        monto_pagado = round(reserva.court.adelanto_monto * horas, 2)
 
     return ReservationPublicOut(
         id=reserva.id,
@@ -357,7 +369,10 @@ def _reservation_public(reserva: Reservation) -> ReservationPublicOut:
         court_nombre=reserva.court.nombre,
         court_tipo=reserva.court.tipo,
         direccion=reserva.court.venue.direccion,
-        adelanto_monto=reserva.court.adelanto_monto * horas,
+        monto_total=monto_total,
+        monto_pagado=monto_pagado,
+        payment_status=reserva.payment_status,
+        adelanto_monto=monto_pagado,
         horas=horas,
     )
 
