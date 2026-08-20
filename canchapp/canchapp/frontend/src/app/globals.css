@@ -3,125 +3,128 @@
 @tailwind utilities;
 
 :root {
-  --grain-opacity: 0.04;
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html, body {
   background: theme('colors.cream');
   color: theme('colors.ink');
   font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  opacity: var(--grain-opacity);
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+button, input, select, textarea {
+  font: inherit;
+  letter-spacing: 0;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 *:focus-visible {
-  outline: 2px solid theme('colors.pitch.700');
-  outline-offset: 2px;
+  outline: 3px solid theme('colors.clay');
+  outline-offset: 3px;
 }
 
 @layer components {
   .btn-base {
-    @apply inline-flex items-center justify-center gap-2 font-medium tracking-tight
-           transition-all duration-150 select-none
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-5 py-3
+           text-base font-semibold transition-all duration-150 select-none
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
-    @apply btn-base bg-ink text-cream px-5 py-2.5
-           hover:bg-pitch-900 active:translate-y-0.5
-           disabled:hover:bg-ink disabled:active:translate-y-0;
+    @apply btn-base bg-forest text-white shadow-brut hover:bg-pitch-700
+           active:translate-y-0.5 disabled:hover:bg-forest;
   }
 
   .btn-accent {
-    @apply btn-base bg-pitch-400 text-ink px-5 py-2.5 font-semibold
-           border-2 border-ink shadow-brut
-           hover:-translate-y-0.5 hover:shadow-brutLg
-           active:translate-y-0 active:shadow-brut
-           disabled:hover:translate-y-0 disabled:hover:shadow-brut;
+    @apply btn-base bg-clay text-white shadow-brut hover:bg-[#E95839]
+           active:translate-y-0.5 disabled:hover:bg-clay;
   }
 
   .btn-ghost {
-    @apply btn-base bg-transparent text-ink px-5 py-2.5 border-2 border-ink/20
-           hover:border-ink hover:bg-ink/5;
+    @apply btn-base border border-forest/25 bg-white text-forest
+           hover:border-forest hover:bg-sky/40;
   }
 
   .btn-danger {
-    @apply btn-base bg-clay text-cream px-5 py-2.5
-           hover:bg-clay/90 active:translate-y-0.5;
+    @apply btn-base bg-clay text-white hover:bg-[#E95839];
   }
 
   .btn-sm {
-    @apply !px-3 !py-1.5 text-sm;
+    @apply !min-h-10 !px-4 !py-2 text-sm;
   }
 
   .btn-lg {
-    @apply !px-7 !py-3.5 text-base;
+    @apply !min-h-14 !px-7 !py-4 text-lg;
   }
 
   .input-field {
-    @apply w-full bg-cream border-2 border-ink/20 px-4 py-3 text-ink
-           focus:border-ink focus:outline-none transition-colors
-           placeholder:text-ink/40
-           disabled:bg-ink/5 disabled:cursor-not-allowed;
+    @apply min-h-14 w-full rounded-lg border border-forest/20 bg-white px-4 py-3.5
+           text-base text-ink placeholder:text-ink/45 transition-colors
+           focus:border-forest focus:outline-none disabled:bg-ink/5 disabled:cursor-not-allowed;
   }
+
   .input-sm {
-    @apply !px-3 !py-2 text-sm;
+    @apply !min-h-11 !px-3 !py-2.5 text-sm;
   }
+
   .input-error {
     @apply !border-clay focus:!border-clay;
   }
+
   .label-field {
-    @apply block text-xs uppercase tracking-widest font-semibold text-ink/70 mb-2;
+    @apply mb-2 block text-sm font-semibold text-forest;
   }
 
   .card {
-    @apply bg-cream border-2 border-ink/10 p-6;
+    @apply rounded-lg border border-forest/10 bg-white p-5 shadow-sm;
   }
+
   .card-brut {
-    @apply bg-cream border-2 border-ink shadow-brut p-6;
+    @apply rounded-lg border border-forest/10 bg-white p-5 shadow-brut;
   }
 
   .responsive-map {
     width: 100%;
     height: var(--map-height);
-    min-height: 220px;
+    min-height: 240px;
     overflow: hidden;
     position: relative;
+    border-radius: 8px;
   }
 
   .link {
-    @apply text-pitch-700 hover:text-pitch-900 underline underline-offset-2;
+    @apply font-medium text-pitch-700 underline underline-offset-4 hover:text-forest;
   }
 
   .badge {
-    @apply inline-flex items-center text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border;
-  }
-  .badge-success {
-    @apply badge bg-pitch-400 border-ink text-ink;
-  }
-  .badge-warning {
-    @apply badge bg-yellow-200 border-yellow-700 text-yellow-900;
-  }
-  .badge-danger {
-    @apply badge bg-clay/20 border-clay text-clay;
-  }
-  .badge-neutral {
-    @apply badge bg-ink/20 border-ink/40 text-ink/60;
+    @apply inline-flex min-h-7 items-center rounded-md border px-2.5 py-1 text-xs font-semibold;
   }
 
+  .badge-success { @apply badge border-pitch-500/30 bg-pitch-100 text-pitch-900; }
+  .badge-warning { @apply badge border-yellow-500/30 bg-yellow-100 text-yellow-900; }
+  .badge-danger { @apply badge border-clay/30 bg-clay/10 text-clay; }
+  .badge-neutral { @apply badge border-ink/15 bg-ink/5 text-ink/70; }
+
   .skeleton {
-    @apply bg-ink/5;
+    @apply rounded-lg bg-ink/5;
     animation: skeleton-pulse 1.4s ease-in-out infinite;
   }
 }
@@ -131,9 +134,8 @@ body::before {
   height: 100%;
 }
 
-.responsive-map .leaflet-popup-content-wrapper,
-.responsive-map .leaflet-popup-tip {
-  border-radius: 0;
+.responsive-map .leaflet-popup-content-wrapper {
+  border-radius: 8px;
 }
 
 .responsive-map .leaflet-popup-content {
@@ -142,51 +144,44 @@ body::before {
 
 @media (max-width: 640px) {
   .responsive-map {
-    height: min(var(--map-height), 58vh);
-    min-height: 240px;
-  }
-
-  .responsive-map .leaflet-control-container .leaflet-top {
-    top: 0.5rem;
-  }
-
-  .responsive-map .leaflet-control-container .leaflet-left {
-    left: 0.5rem;
+    height: min(var(--map-height), 56vh);
+    min-height: 280px;
   }
 }
 
 @layer utilities {
   .display-xl {
     font-family: var(--font-display);
-    font-size: clamp(2.5rem, 8vw, 6rem);
-    line-height: 0.95;
-    letter-spacing: -0.04em;
-    font-weight: 600;
-  }
-  .display-lg {
-    font-family: var(--font-display);
-    font-size: clamp(1.75rem, 4.5vw, 3rem);
-    line-height: 1;
-    letter-spacing: -0.03em;
-    font-weight: 600;
-  }
-  .display-md {
-    font-family: var(--font-display);
-    font-size: clamp(1.25rem, 3vw, 1.875rem);
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    font-weight: 600;
-  }
-  .eyebrow {
-    @apply text-xs uppercase tracking-[0.2em] font-semibold text-ink/60;
+    font-size: clamp(2.35rem, 9vw, 4.75rem);
+    line-height: 1.02;
+    letter-spacing: 0;
+    font-weight: 900;
   }
 
-  .animate-fade-in {
-    animation: fade-in 0.2s ease-out;
+  .display-lg {
+    font-family: var(--font-display);
+    font-size: clamp(1.85rem, 7vw, 3rem);
+    line-height: 1.08;
+    letter-spacing: 0;
+    font-weight: 900;
   }
-  .animate-slide-up {
-    animation: slide-up 0.3s ease-out;
+
+  .display-md {
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 5vw, 2rem);
+    line-height: 1.15;
+    letter-spacing: 0;
+    font-weight: 800;
   }
+
+  .eyebrow {
+    @apply text-sm font-semibold text-pitch-700;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .animate-fade-in { animation: fade-in 0.2s ease-out; }
+  .animate-slide-up { animation: slide-up 0.3s ease-out; }
 }
 
 @keyframes fade-in {

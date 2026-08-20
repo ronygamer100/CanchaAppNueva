@@ -8,6 +8,7 @@ import { normalizePeruvianWhatsApp } from '@/lib/whatsapp';
 import GoogleSignIn from '@/components/GoogleSignIn';
 import { humanizeError } from '@/lib/errors';
 import WhatsAppInput from '@/components/WhatsAppInput';
+import FubitoLogo from '@/components/FubitoLogo';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -87,48 +88,41 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen grid md:grid-cols-2">
-      <section className="bg-pitch-400 p-10 md:p-16 flex flex-col justify-between min-h-[40vh] border-r-2 border-ink">
-        <Link href="/" className="flex items-center gap-2 self-start">
-          <div className="w-8 h-8 bg-ink grid place-items-center">
-            <div className="w-3 h-3 bg-pitch-400 rounded-full" />
-          </div>
-          <span className="font-display font-semibold text-xl tracking-tightest">
-            fubito
-          </span>
-        </Link>
+    <main className="min-h-screen md:grid md:grid-cols-2">
+      <section className="bg-sky px-6 py-8 sm:p-10 md:p-14 flex flex-col justify-between min-h-[350px] md:min-h-screen">
+        <FubitoLogo size="sm" className="self-start rounded-lg bg-white px-3 py-2" />
 
         <div>
-          <p className="eyebrow mb-4">Para dueños de cancha</p>
-          <h1 className="display-xl mb-4">Empieza<br/>en 2 minutos.</h1>
-          <p className="text-ink/80 text-lg max-w-md">
-            Crea tu cuenta, registra tu cancha y compárte el link en Instagram el mismo día.
+          <p className="mb-2 font-semibold text-pitch-700">Para dueños de cancha</p>
+          <h1 className="font-display text-4xl font-black leading-tight sm:text-5xl">Empieza en pocos minutos.</h1>
+          <p className="mt-4 max-w-md text-lg text-ink/70">
+            Crea tu cuenta, registra tu cancha y empieza a recibir reservas.
           </p>
         </div>
 
-        <div className="font-mono text-sm space-y-1">
-          <p>· Gratis los primeros 60 días</p>
-          <p>· Sin contratos</p>
-          <p>· Cancelas cuando quieras</p>
+        <div className="space-y-1 text-sm font-semibold text-forest">
+          <p>✓ Configuración guiada</p>
+          <p>✓ Reservas y calendario en un lugar</p>
+          <p>✓ Sin contratos</p>
         </div>
       </section>
 
-      <section className="p-10 md:p-16 flex flex-col justify-center">
+      <section className="flex flex-col justify-center px-6 py-10 sm:p-10 md:p-14">
         <div className="max-w-md w-full">
-          <h2 className="display-lg mb-8">Crea tu cuenta</h2>
+          <h2 className="display-md mb-7">Crea tu cuenta</h2>
 
           {/* Opción Google */}
           {!showGoogleForm ? (
             <button
               type="button"
               onClick={() => setShowGoogleForm(true)}
-              className="w-full border-2 border-ink p-3 mb-4 font-medium hover:bg-cream text-left flex items-center justify-between"
+              className="btn-ghost w-full mb-4 justify-between"
             >
               <span>Registrarme con Google</span>
-              <span className="font-mono text-xs">→</span>
+              <span aria-hidden="true">→</span>
             </button>
           ) : (
-            <div className="border-2 border-ink p-5 mb-4 bg-cream">
+            <div className="card mb-4">
               <p className="eyebrow mb-3">Cuenta con Google</p>
               <p className="text-sm text-ink/70 mb-4">
                 Primero completa los datos del negocio, después dale click al botón de Google.
@@ -149,7 +143,7 @@ export default function RegisterPage() {
                   label="WhatsApp del negocio"
                 />
               </div>
-              <GoogleSignIn onCredential={handleGoogle} text="signup_with" width={360} />
+              <GoogleSignIn onCredential={handleGoogle} text="signup_with" width={320} />
               <button
                 type="button"
                 onClick={() => { setShowGoogleForm(false); setError(null); }}
@@ -164,7 +158,7 @@ export default function RegisterPage() {
             <>
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 h-px bg-ink/10" />
-                <span className="text-xs font-mono text-ink/40">O CON EMAIL</span>
+                <span className="text-sm font-medium text-ink/45">O usa tu email</span>
                 <div className="flex-1 h-px bg-ink/10" />
               </div>
 

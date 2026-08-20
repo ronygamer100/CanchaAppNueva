@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { loginWithEmail, apiFetch, setToken } from '@/lib/api';
 import { humanizeError } from '@/lib/errors';
 import GoogleSignIn from '@/components/GoogleSignIn';
+import FubitoLogo from '@/components/FubitoLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,40 +49,32 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen grid md:grid-cols-2">
-      <section className="bg-pitch-900 text-cream p-10 md:p-16 flex flex-col justify-between min-h-[40vh]">
-        <Link href="/" className="flex items-center gap-2 self-start">
-          <div className="w-8 h-8 bg-cream grid place-items-center">
-            <div className="w-3 h-3 bg-pitch-900 rounded-full" />
-          </div>
-          <span className="font-display font-semibold text-xl tracking-tightest">
-            fubito
-          </span>
-        </Link>
+    <main className="min-h-screen md:grid md:grid-cols-2">
+      <section className="bg-forest text-white px-6 py-8 sm:p-10 md:p-14 flex flex-col justify-between min-h-[330px] md:min-h-screen">
+        <FubitoLogo size="sm" className="self-start rounded-lg bg-white px-3 py-2" />
 
         <div>
-          <p className="eyebrow !text-pitch-400 mb-4">Panel del dueño</p>
-          <h1 className="display-lg mb-4">Bienvenido de vuelta.</h1>
-          <p className="text-cream/70 text-lg max-w-md">
-            Entra y mira tus reservas pendientes, confirma con un clic y deja de perseguir
-            WhatsApps.
+          <p className="mb-2 font-semibold text-pitch-400">Panel del dueño</p>
+          <h1 className="font-display text-4xl font-black leading-tight sm:text-5xl">Tu cancha, bajo control.</h1>
+          <p className="mt-4 max-w-md text-lg text-white/75">
+            Revisa reservas, confirma horarios y administra tu negocio con pasos claros.
           </p>
         </div>
 
-        <p className="text-cream/40 text-sm font-mono">v0.1</p>
+        <p className="text-sm font-medium text-white/55">Hecho para negocios de Arequipa</p>
       </section>
 
-      <section className="p-10 md:p-16 flex flex-col justify-center">
+      <section className="flex flex-col justify-center px-6 py-10 sm:p-10 md:p-14">
         <div className="max-w-md w-full">
-          <h2 className="display-lg mb-8">Inicia sesión</h2>
+          <h2 className="display-md mb-7">Inicia sesión</h2>
 
           <div className="mb-6">
-            <GoogleSignIn onCredential={handleGoogle} text="signin_with" width={360} />
+            <GoogleSignIn onCredential={handleGoogle} text="signin_with" width={320} />
           </div>
 
           <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-ink/10" />
-            <span className="text-xs font-mono text-ink/40">O CON EMAIL</span>
+            <span className="text-sm font-medium text-ink/45">O usa tu email</span>
             <div className="flex-1 h-px bg-ink/10" />
           </div>
 

@@ -34,7 +34,7 @@ export default function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}
-          <h1 className="text-2xl sm:text-4xl font-display font-bold leading-tight tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-display font-bold leading-tight">
             {title}
           </h1>
           {description && (

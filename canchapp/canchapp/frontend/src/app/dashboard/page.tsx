@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch, clearToken, getToken, API_URL } from '@/lib/api';
 import type { Venue, Court, Owner, Reservation, ReservationStatus } from '@/lib/types';
+import { Bell, ExternalLink } from 'lucide-react';
+import { FubitoMark } from '@/components/FubitoLogo';
 
 function formatFecha(iso: string) {
   const [y, m, d] = iso.split('-').map(Number);
@@ -163,21 +165,21 @@ export default function DashboardPage() {
   }
 
   if (loading) {
-    return <main className="min-h-screen grid place-items-center font-mono text-ink/50">Cargando…</main>;
+    return <main className="min-h-screen grid place-items-center text-ink/50">Cargando…</main>;
   }
 
   return (
     <main className="min-h-screen bg-cream">
       {/* Topbar con notificaciones (la nav está en la sidebar) */}
-      <div className="border-b-2 border-ink/10 bg-cream hidden lg:block">
+      <div className="border-b border-ink/10 bg-white hidden lg:block">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-end gap-2">
           <button
             onClick={() => setInboxOpen((v) => !v)}
-            className="relative px-3 py-2 border-2 border-ink/20 hover:border-ink font-medium text-sm"
+            className="btn-ghost btn-sm relative"
           >
-            <span className="mr-1">🔔</span> Pendientes
+            <Bell className="w-4 h-4" aria-hidden="true" /> Pendientes
             {pendingCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-clay text-cream font-mono text-xs px-1.5 py-0.5 border-2 border-ink min-w-[24px] text-center">
+              <span className="absolute -top-2 -right-2 rounded-md bg-clay text-white text-xs px-1.5 py-0.5 min-w-[24px] text-center shadow-sm">
                 {pendingCount > 99 ? '99+' : pendingCount}
               </span>
             )}
@@ -185,19 +187,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 py-8 sm:py-10">
         {venues.length === 0 ? (
           <div className="max-w-2xl mx-auto">
-            <div className="card-brut bg-pitch-400 text-center py-10 mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 bg-pitch-900 flex items-center justify-center">
-                <svg viewBox="0 0 32 32" fill="none" className="w-9 h-9">
-                  <circle cx="16" cy="16" r="13" stroke="#7CD992" strokeWidth="2" />
-                  <path d="M16 5L20 9L18 13L14 13L12 9L16 5Z" fill="#7CD992" />
-                  <path d="M27 14L25 18L21 18L19 14L21 10L25 10L27 14Z" fill="#7CD992" />
-                  <path d="M5 14L7 10L11 10L13 14L11 18L7 18L5 14Z" fill="#7CD992" />
-                  <path d="M16 27L12 23L14 19L18 19L20 23L16 27Z" fill="#7CD992" />
-                </svg>
-              </div>
+            <div className="card-brut bg-sky text-center py-10 mb-6">
+              <FubitoMark className="w-16 h-16 mx-auto mb-4" />
               <p className="eyebrow mb-2">¡Bienvenido a fubito!</p>
               <h2 className="display-lg mb-3">Empieza en 3 pasos</h2>
               <p className="text-ink/70 mb-8 max-w-md mx-auto">
@@ -209,17 +203,17 @@ export default function DashboardPage() {
                   { n: '2', title: 'Agrega tus canchas', desc: 'Tipo, precio por hora y adelanto requerido.' },
                   { n: '3', title: 'Comparte el link', desc: 'Pégalo en Instagram, WhatsApp o Google Maps.' },
                 ].map((s) => (
-                  <div key={s.n} className="bg-pitch-900 text-cream p-4">
-                    <div className="w-8 h-8 bg-pitch-400 text-ink font-display font-bold flex items-center justify-center mb-3">
+                  <div key={s.n} className="border-t border-forest/15 pt-4 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                    <div className="w-9 h-9 rounded-lg bg-forest text-white font-display font-bold flex items-center justify-center mb-3">
                       {s.n}
                     </div>
                     <p className="font-semibold mb-1">{s.title}</p>
-                    <p className="text-xs text-cream/70">{s.desc}</p>
+                    <p className="text-sm text-ink/65">{s.desc}</p>
                   </div>
                 ))}
               </div>
               <Link href="/dashboard/venue/nuevo" className="btn-primary text-lg px-8 py-4">
-                Crear mi negocio →
+                Crear mi negocio
               </Link>
             </div>
           </div>
@@ -234,10 +228,10 @@ export default function DashboardPage() {
                     <button
                       key={v.id}
                       onClick={() => setActiveVenue(v)}
-                      className={`px-4 py-2 border-2 font-medium ${
+                      className={`min-h-12 rounded-lg border px-4 py-2 font-semibold ${
                         activeVenue?.id === v.id
-                          ? 'bg-ink text-cream border-ink'
-                          : 'border-ink/20 hover:border-ink'
+                          ? 'bg-forest text-white border-forest'
+                          : 'bg-white border-forest/20 hover:border-forest'
                       }`}
                     >
                       {v.nombre}
@@ -253,16 +247,16 @@ export default function DashboardPage() {
                 <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
                   <div>
                     <p className="eyebrow mb-1">Negocio</p>
-                    <h2 className="font-display text-3xl tracking-tightest">{activeVenue.nombre}</h2>
+                    <h2 className="font-display text-3xl font-bold">{activeVenue.nombre}</h2>
                     <p className="text-sm text-ink/60 mt-1">{activeVenue.direccion}</p>
                   </div>
                   <div className="flex flex-wrap gap-2 items-center">
                     <a
                       href={`/c/${activeVenue.slug}`}
                       target="_blank"
-                      className="font-mono text-xs bg-pitch-400 border-2 border-ink px-3 py-2 hover:-translate-y-0.5 transition-transform"
+                      className="btn-ghost btn-sm"
                     >
-                      /c/{activeVenue.slug} ↗
+                      Ver página <ExternalLink className="w-4 h-4" aria-hidden="true" />
                     </a>
                     <Link
                       href={`/dashboard/venue/${activeVenue.id}/calendario`}
@@ -296,10 +290,10 @@ export default function DashboardPage() {
                       <article
                         key={c.id}
                         onClick={() => setActiveCourt(c)}
-                        className={`border-2 p-4 cursor-pointer transition-all ${
+                        className={`rounded-lg border p-4 cursor-pointer transition-all ${
                           isActive
-                            ? 'border-ink bg-pitch-400 shadow-brut'
-                            : 'border-ink/20 hover:border-ink bg-cream'
+                            ? 'border-pitch-700 bg-pitch-100 shadow-sm'
+                            : 'border-forest/15 hover:border-forest bg-white'
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">

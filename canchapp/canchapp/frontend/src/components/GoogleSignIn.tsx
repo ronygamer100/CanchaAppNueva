@@ -72,7 +72,7 @@ export default function GoogleSignIn({
 
   if (!CLIENT_ID) {
     return (
-      <div className="border-2 border-clay/40 bg-clay/10 p-3 text-xs text-clay">
+      <div className="rounded-lg border border-clay/30 bg-clay/10 p-4 text-sm text-clay">
         Configuración faltante: agrega NEXT_PUBLIC_GOOGLE_CLIENT_ID en frontend/.env.local
       </div>
     );

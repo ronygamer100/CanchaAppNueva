@@ -32,7 +32,7 @@ export function LoadingScreen({ message = 'Cargando…' }: { message?: string })
     <main className="min-h-screen grid place-items-center">
       <div className="flex flex-col items-center gap-3 text-ink/60">
         <Spinner className="w-8 h-8 text-pitch-700" />
-        <p className="font-mono text-sm">{message}</p>
+        <p className="text-sm font-medium">{message}</p>
       </div>
     </main>
   );

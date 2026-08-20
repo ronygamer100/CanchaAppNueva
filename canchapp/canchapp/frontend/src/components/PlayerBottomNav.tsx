@@ -1,72 +1,56 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { clearPlayerToken } from '@/lib/api';
+import { usePathname } from 'next/navigation';
+import { CalendarDays, Home, Search, UserRound } from 'lucide-react';
 
-/**
- * Barra de navegación inferior solo para móvil en rutas de jugador.
- */
+const items = [
+  { label: 'Inicio', href: '/', icon: Home, active: (path: string) => path === '/' },
+  {
+    label: 'Explorar', href: '/jugador/explorar', icon: Search,
+    active: (path: string) => path.startsWith('/jugador/explorar'),
+  },
+  {
+    label: 'Reservas', href: '/jugador', icon: CalendarDays,
+    active: (path: string) => path === '/jugador',
+  },
+  {
+    label: 'Perfil', href: '/jugador/perfil', icon: UserRound,
+    active: (path: string) => path.startsWith('/jugador/perfil'),
+  },
+];
+
 export default function PlayerBottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  // Solo mostrar en rutas /jugador/* (excepto /jugador/login)
   const isPlayerRoute = pathname === '/jugador' || pathname.startsWith('/jugador/');
-  if (!isPlayerRoute) return null;
-  if (pathname === '/jugador/login') return null;
 
-  function handleLogout() {
-    clearPlayerToken();
-    router.push('/');
-  }
-
-  const isReservas = pathname === '/jugador';
-  const isExplorar = pathname.startsWith('/jugador/explorar');
+  if (!isPlayerRoute || pathname === '/jugador/login') return null;
 
   return (
-    <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-cream border-t-2 border-ink/10">
-      <div className="grid grid-cols-3 h-16">
-        <Link
-          href="/jugador"
-          className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-            isReservas ? 'text-pitch-900' : 'text-ink/40'
-          }`}
-        >
-          <svg viewBox="0 0 24 24" fill={isReservas ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-            <rect x="3" y="4" width="18" height="18" rx="2" />
-            <line x1="3" y1="9" x2="21" y2="9" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-          </svg>
-          <span className="text-[10px] font-medium">Reservas</span>
-        </Link>
-
-        <Link
-          href="/jugador/explorar"
-          className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-            isExplorar ? 'text-pitch-900' : 'text-ink/40'
-          }`}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-            <circle cx="11" cy="11" r="8" fill={isExplorar ? 'currentColor' : 'none'} />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            {isExplorar && <circle cx="11" cy="11" r="4" fill="white" />}
-          </svg>
-          <span className="text-[10px] font-medium">Explorar</span>
-        </Link>
-
-        <button
-          onClick={handleLogout}
-          className="flex flex-col items-center justify-center gap-1 text-ink/40 hover:text-clay transition-colors"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          <span className="text-[10px] font-medium">Salir</span>
-        </button>
+    <nav
+      aria-label="Navegación del jugador"
+      className="sm:hidden fixed bottom-0 inset-x-0 z-40 border-t border-forest/10 bg-white/95 backdrop-blur"
+    >
+      <div className="grid grid-cols-4 min-h-[72px] pb-[env(safe-area-inset-bottom)]">
+        {items.map((item) => {
+          const active = item.active(pathname);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? 'page' : undefined}
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-semibold transition-colors ${
+                active ? 'text-forest' : 'text-ink/55 hover:text-forest'
+              }`}
+            >
+              <span className={`grid h-8 w-12 place-items-center rounded-lg ${active ? 'bg-pitch-100' : ''}`}>
+                <Icon size={23} strokeWidth={active ? 2.6 : 2} />
+              </span>
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

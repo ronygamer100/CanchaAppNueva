@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch, setPlayerToken } from '@/lib/api';
 import GoogleSignIn from '@/components/GoogleSignIn';
+import FubitoLogo from '@/components/FubitoLogo';
 import { humanizeError } from '@/lib/errors';
 
 export default function PlayerLoginPage() {
@@ -48,39 +49,30 @@ function LoginShell({
   error?: string | null;
 }) {
   return (
-    <main className="min-h-screen grid md:grid-cols-2">
-      <section className="bg-pitch-900 text-cream p-10 md:p-16 flex flex-col justify-between min-h-[40vh]">
-        <Link href="/" className="flex items-center gap-2 self-start">
-          <div className="w-8 h-8 bg-cream grid place-items-center">
-            <div className="w-3 h-3 bg-pitch-900 rounded-full" />
-          </div>
-          <span className="font-display font-semibold text-xl tracking-tightest">
-            fubito
-          </span>
-        </Link>
+    <main className="min-h-screen md:grid md:grid-cols-2">
+      <section className="bg-forest text-white px-6 py-8 sm:p-10 md:p-14 flex flex-col justify-between min-h-[330px] md:min-h-screen">
+        <FubitoLogo size="sm" className="self-start rounded-lg bg-white px-3 py-2" />
 
         <div>
-          <p className="eyebrow !text-pitch-400 mb-4">Para jugadores</p>
-          <h1 className="display-lg mb-4">Tus reservas en un solo lugar.</h1>
-          <p className="text-cream/70 text-lg max-w-md">
-            Reserva más rápido (tus datos quedan guardados) y mira el historial de todas tus
-            canchas favoritas.
+          <p className="mb-2 font-semibold text-pitch-400">Para jugadores</p>
+          <h1 className="font-display text-4xl font-black leading-tight sm:text-5xl">Juega sin complicarte.</h1>
+          <p className="mt-4 max-w-md text-lg text-white/75">
+            Guarda tus datos, encuentra horarios disponibles y revisa todas tus reservas.
           </p>
         </div>
 
-        <p className="text-cream/40 text-sm font-mono">solo necesitas tu Google</p>
+        <p className="text-sm font-medium text-white/55">Solo necesitas tu cuenta de Google</p>
       </section>
 
-      <section className="p-10 md:p-16 flex flex-col justify-center">
+      <section className="flex flex-col justify-center px-6 py-10 sm:p-10 md:p-14">
         <div className="max-w-md w-full">
-          <h2 className="display-lg mb-4">Entra con Google</h2>
-          <p className="text-ink/70 mb-8">
-            Un click. Sin contraseñas, sin email de verificación. Si es tu primera vez, te creamos
-            la cuenta automáticamente.
+          <h2 className="display-md mb-3">Entra con Google</h2>
+          <p className="text-base text-ink/65 mb-7">
+            Un solo paso. Si es tu primera vez, crearemos tu cuenta automáticamente.
           </p>
 
           {onGoogle ? (
-            <GoogleSignIn onCredential={onGoogle} text="continue_with" width={360} />
+            <GoogleSignIn onCredential={onGoogle} text="continue_with" width={320} />
           ) : (
             <div className="h-10 w-full max-w-[360px] skeleton" />
           )}

@@ -9,6 +9,17 @@ import { AMENITIES, AMENITIES_BY_SLUG } from '@/lib/amenities';
 import { DISTRITOS_AREQUIPA } from '@/lib/distritos';
 import VenuesMap, { type VenueMapPin } from '@/components/VenuesMap';
 import type { Player } from '@/lib/types';
+import FubitoLogo from '@/components/FubitoLogo';
+import {
+  ChevronRight,
+  Clock3,
+  List,
+  LocateFixed,
+  Map as MapIcon,
+  MapPin,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
 
 interface ExploreVenue {
   slug: string;
@@ -168,16 +179,14 @@ export default function ExplorarPage() {
   }
 
   return (
-    <main className="min-h-screen bg-cream">
+    <main className="min-h-screen bg-cream pb-24 lg:pb-0">
       {/* Header */}
-      <header className="border-b-2 border-ink/10 bg-cream sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between flex-wrap gap-3">
+      <header className="border-b border-ink/10 bg-white sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-5 sm:px-6 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4">
-            <Link href="/jugador" className="font-display font-semibold tracking-tightest">
-              fubito
-            </Link>
-            <Link href="/jugador" className="text-sm hover:underline text-ink/70">
-              ← Mis reservas
+            <FubitoLogo href="/jugador" />
+            <Link href="/jugador" className="hidden sm:inline text-sm font-medium text-ink/60 hover:text-ink">
+              Mis reservas
             </Link>
           </div>
           {player.avatar_url && (
@@ -187,11 +196,11 @@ export default function ExplorarPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 py-7">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
           <div>
-            <p className="eyebrow mb-1">Explorar</p>
-            <h1 className="text-2xl sm:text-4xl font-display font-bold">Tu cancha perfecta</h1>
+            <p className="eyebrow mb-1">Explorar canchas</p>
+            <h1 className="text-2xl sm:text-4xl font-display font-bold">¿Dónde quieres jugar?</h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -199,60 +208,34 @@ export default function ExplorarPage() {
             <button
               type="button"
               onClick={() => setShowFiltersMobile(true)}
-              className="lg:hidden flex items-center gap-2 border-2 border-ink bg-cream px-3 py-2 text-sm font-medium"
+              className="lg:hidden min-h-12 flex items-center gap-2 rounded-lg border border-forest/20 bg-white px-4 text-sm font-semibold text-forest"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-                <line x1="4" y1="6" x2="20" y2="6" /><line x1="7" y1="12" x2="20" y2="12" />
-                <line x1="10" y1="18" x2="20" y2="18" />
-              </svg>
+              <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
               Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
             </button>
 
-            <div className="flex border-2 border-ink">
+            <div className="flex rounded-lg border border-forest/20 bg-white p-1" aria-label="Tipo de vista">
               <button
                 onClick={() => setVista('lista')}
-                className={`px-3 py-2 text-sm font-medium ${
-                  vista === 'lista' ? 'bg-ink text-cream' : 'bg-cream hover:bg-ink/5'
+                className={`min-h-10 flex items-center gap-2 rounded-md px-3 text-sm font-semibold ${
+                  vista === 'lista' ? 'bg-forest text-white' : 'text-forest hover:bg-sky/50'
                 }`}
               >
-                Lista
+                <List className="w-4 h-4" aria-hidden="true" /> Lista
               </button>
               <button
                 onClick={() => setVista('mapa')}
-                className={`px-3 py-2 text-sm font-medium border-l-2 border-ink ${
-                  vista === 'mapa' ? 'bg-ink text-cream' : 'bg-cream hover:bg-ink/5'
+                className={`min-h-10 flex items-center gap-2 rounded-md px-3 text-sm font-semibold ${
+                  vista === 'mapa' ? 'bg-forest text-white' : 'text-forest hover:bg-sky/50'
                 }`}
               >
-                Mapa
+                <MapIcon className="w-4 h-4" aria-hidden="true" /> Mapa
               </button>
             </div>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-[300px_1fr] gap-6">
-          {/* Botón filtros (solo mobile) */}
-          <button
-            type="button"
-            onClick={() => setShowFiltersMobile(true)}
-            className="lg:hidden flex items-center justify-between border-2 border-ink bg-cream p-3 font-medium hover:bg-ink/5"
-          >
-            <span className="flex items-center gap-2">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="7" y1="12" x2="20" y2="12" />
-                <line x1="10" y1="18" x2="20" y2="18" />
-                <circle cx="6" cy="12" r="1" fill="currentColor" />
-                <circle cx="9" cy="18" r="1" fill="currentColor" />
-              </svg>
-              Filtros
-            </span>
-            {activeFiltersCount > 0 && (
-              <span className="bg-pitch-400 border border-ink px-2 py-0.5 text-xs font-mono">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
-
           {/* SIDEBAR FILTROS — visible en lg+; en mobile aparece como drawer overlay */}
           {showFiltersMobile && (
             <div
@@ -261,12 +244,12 @@ export default function ExplorarPage() {
             />
           )}
           <aside className={`
-            card-brut bg-cream
+            card-brut bg-white
             ${showFiltersMobile
-              ? 'fixed inset-x-0 bottom-0 top-12 z-50 overflow-y-auto !rounded-none !border-t-2 !border-x-0 !border-b-0'
+              ? 'fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto !rounded-t-lg !rounded-b-none !border-x-0 !border-b-0'
               : 'hidden'
             }
-            lg:!relative lg:!inset-auto lg:block lg:sticky lg:top-24 lg:self-start lg:!border-2
+            lg:!relative lg:!inset-auto lg:block lg:sticky lg:top-24 lg:self-start
           `}>
             <div className="flex items-center justify-between mb-4">
               <p className="eyebrow">Filtros</p>
@@ -279,13 +262,10 @@ export default function ExplorarPage() {
                 {/* Botón cerrar solo en mobile */}
                 <button
                   onClick={() => setShowFiltersMobile(false)}
-                  className="lg:hidden text-ink/60 hover:text-ink"
+                  className="icon-button lg:hidden"
                   aria-label="Cerrar filtros"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -318,7 +298,7 @@ export default function ExplorarPage() {
               <div>
                 <label className="label-field flex items-center justify-between">
                   <span>Precio máximo</span>
-                  <span className="font-mono text-pitch-700 normal-case tracking-normal">
+                  <span className="text-pitch-800 normal-case">
                     S/{precioMax}/h
                   </span>
                 </label>
@@ -331,7 +311,7 @@ export default function ExplorarPage() {
                   onChange={(e) => setPrecioMax(Number(e.target.value))}
                   className="w-full accent-pitch-700"
                 />
-                <div className="flex justify-between text-[10px] font-mono text-ink/40 mt-1">
+                <div className="flex justify-between text-xs text-ink/40 mt-1">
                   <span>S/20</span>
                   <span>S/150</span>
                 </div>
@@ -371,16 +351,16 @@ export default function ExplorarPage() {
                 <button
                   onClick={pedirGPS}
                   disabled={gpsState === 'pidiendo'}
-                  className="w-full text-xs border-2 border-ink/20 hover:border-ink py-2 transition-colors"
+                  className="btn-ghost w-full text-sm"
                 >
-                  {gpsState === 'idle' && '📍 Usar mi ubicación'}
+                  {gpsState === 'idle' && <><LocateFixed className="w-4 h-4" aria-hidden="true" /> Usar mi ubicación</>}
                   {gpsState === 'pidiendo' && 'Esperando permiso…'}
                   {gpsState === 'denegado' && 'No se pudo obtener ubicación'}
                 </button>
               )}
               {userPos && (
-                <p className="text-xs font-mono text-pitch-700">
-                  ✓ Ubicación detectada
+                <p className="text-sm font-semibold text-pitch-800">
+                  Ubicación detectada
                 </p>
               )}
 
@@ -393,8 +373,8 @@ export default function ExplorarPage() {
                       <button
                         key={a.slug}
                         onClick={() => toggleAmenity(a.slug)}
-                        className={`text-[10px] border p-2 flex flex-col items-center gap-1 transition-colors ${
-                          on ? 'bg-ink text-cream border-ink' : 'border-ink/15 hover:border-ink'
+                        className={`min-h-16 rounded-lg border p-2 text-xs flex flex-col items-center justify-center gap-1 transition-colors ${
+                          on ? 'bg-forest text-white border-forest' : 'bg-white border-forest/15 hover:border-forest'
                         }`}
                         title={a.label}
                       >
@@ -418,12 +398,12 @@ export default function ExplorarPage() {
 
           {/* RESULTADOS */}
           <section>
-            <p className="text-sm text-ink/60 mb-4 font-mono">
+            <p className="text-sm text-ink/60 mb-4">
               {loading ? 'Buscando…' : `${venues.length} resultado${venues.length === 1 ? '' : 's'}`}
             </p>
 
             {!loading && venues.length === 0 ? (
-              <div className="card-brut bg-cream text-center py-16">
+              <div className="card-brut bg-white text-center py-16">
                 <SoccerBallIconLocal className="w-16 h-16 mx-auto text-ink/20 mb-4" />
                 <p className="text-ink/60 mb-2">No encontramos canchas con esos filtros.</p>
                 <button onClick={resetFilters} className="text-sm underline">
@@ -452,9 +432,9 @@ function ExploreCard({ v }: { v: ExploreVenue }) {
   return (
     <Link
       href={`/c/${v.slug}`}
-      className="card-brut !p-0 overflow-hidden block hover:-translate-y-1 transition-transform"
+      className="card-brut !p-0 overflow-hidden block bg-white hover:border-pitch-700 transition-colors"
     >
-      <div className="bg-ink h-36 relative overflow-hidden">
+      <div className="bg-forest aspect-[16/9] relative overflow-hidden">
         {fotoSrc ? (
           <img src={fotoSrc} alt={v.nombre} className="w-full h-full object-cover" />
         ) : (
@@ -463,55 +443,61 @@ function ExploreCard({ v }: { v: ExploreVenue }) {
           </div>
         )}
         {v.precio_desde !== null && v.precio_desde !== undefined && (
-          <div className="absolute top-2 right-2 bg-pitch-400 border-2 border-ink px-2 py-1">
-            <span className="text-[10px] font-mono uppercase block leading-none">
+          <div className="absolute top-3 right-3 rounded-lg bg-white px-3 py-2 shadow-md">
+            <span className="text-xs text-ink/60 block leading-none">
               {v.es_referencial ? 'Precio ref.' : 'Desde'}
             </span>
-            <span className="font-display text-lg leading-none">S/{v.precio_desde}<span className="text-xs">/h</span></span>
+            <span className="font-display text-xl leading-none text-forest">S/{v.precio_desde}<span className="text-xs">/h</span></span>
           </div>
         )}
         <div className="absolute bottom-2 left-2 flex gap-1.5">
           {v.distrito && (
-            <div className="bg-ink/90 text-cream text-[10px] font-mono uppercase px-2 py-1 tracking-wider">
+            <div className="rounded-md bg-forest/95 text-white text-xs font-semibold px-2.5 py-1.5">
               {v.distrito}
             </div>
           )}
           {v.es_referencial && (
-            <div className="bg-cream text-ink text-[10px] font-mono uppercase px-2 py-1 tracking-wider border border-ink">
+            <div className="rounded-md bg-white text-ink text-xs px-2.5 py-1.5">
               Referencial
             </div>
           )}
           {v.distancia_km !== undefined && (
-            <div className="bg-pitch-400 text-ink text-[10px] font-mono uppercase px-2 py-1 tracking-wider border border-ink">
+            <div className="rounded-md bg-pitch-100 text-forest text-xs font-semibold px-2.5 py-1.5">
               ~{v.distancia_km.toFixed(1)} km
             </div>
           )}
         </div>
       </div>
-      <div className="p-4">
-        <h3 className="font-display text-lg leading-tight mb-1">{v.nombre}</h3>
-        <p className="text-xs text-ink/60 truncate">{v.direccion}</p>
-        <div className="flex items-center gap-3 mt-3 text-xs font-mono text-ink/60">
+      <div className="p-5">
+        <h3 className="font-display text-xl leading-tight mb-2">{v.nombre}</h3>
+        <p className="flex items-center gap-1.5 text-sm text-ink/60 truncate">
+          <MapPin className="w-4 h-4 shrink-0" aria-hidden="true" /> {v.direccion}
+        </p>
+        <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-ink/60">
           <span>{v.court_count} cancha{v.court_count > 1 ? 's' : ''}</span>
-          <span className="opacity-50">·</span>
-          <span>{v.hora_apertura}–{v.hora_cierre}</span>
+          <span className="flex items-center gap-1.5">
+            <Clock3 className="w-4 h-4" aria-hidden="true" /> {v.hora_apertura} a {v.hora_cierre}
+          </span>
         </div>
         {v.amenities && v.amenities.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-ink/10">
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-ink/10">
             {v.amenities.slice(0, 6).map((slug) => {
               const a = AMENITIES_BY_SLUG[slug];
               if (!a) return null;
               return (
-                <div key={slug} className="w-4 h-4 text-ink/60" title={a.label}>
+                <div key={slug} className="w-5 h-5 text-forest" title={a.label}>
                   {a.icon}
                 </div>
               );
             })}
             {v.amenities.length > 6 && (
-              <span className="text-[10px] font-mono text-ink/40">+{v.amenities.length - 6}</span>
+              <span className="text-xs text-ink/40">+{v.amenities.length - 6}</span>
             )}
           </div>
         )}
+        <div className="mt-4 flex min-h-12 items-center justify-between border-t border-ink/10 pt-4 text-sm font-semibold text-forest">
+          Ver horarios <ChevronRight className="w-5 h-5" aria-hidden="true" />
+        </div>
       </div>
     </Link>
   );
