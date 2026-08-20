@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Time, JSON
+from sqlalchemy import Boolean, Column, Integer, String, Float, ForeignKey, DateTime, Time, JSON
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -19,6 +19,11 @@ class Venue(Base):
     foto_url = Column(String(500), nullable=True)
     logo_url = Column(String(500), nullable=True)
     yape_qr_url = Column(String(500), nullable=True)
+    telefono_publico = Column(String(30), nullable=True)
+    fuente_nombre = Column(String(80), nullable=True)
+    fuente_url = Column(String(500), nullable=True)
+    es_referencial = Column(Boolean, nullable=False, default=False)
+    reservas_habilitadas = Column(Boolean, nullable=False, default=True)
     hora_apertura = Column(Time, nullable=False)
     hora_cierre = Column(Time, nullable=False)
 

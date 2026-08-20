@@ -23,6 +23,8 @@ interface ExploreVenue {
   precio_desde?: number | null;
   lat?: number | null;
   lng?: number | null;
+  es_referencial?: boolean;
+  reservas_habilitadas?: boolean;
   distancia_km?: number;  // calculada en frontend si hay GPS
 }
 
@@ -149,6 +151,7 @@ export default function ExplorarPage() {
         lat: v.lat as number, lng: v.lng as number,
         foto_url: v.foto_url, precio_desde: v.precio_desde,
         court_count: v.court_count,
+        es_referencial: v.es_referencial,
       })),
     [venues],
   );
@@ -461,7 +464,9 @@ function ExploreCard({ v }: { v: ExploreVenue }) {
         )}
         {v.precio_desde !== null && v.precio_desde !== undefined && (
           <div className="absolute top-2 right-2 bg-pitch-400 border-2 border-ink px-2 py-1">
-            <span className="text-[10px] font-mono uppercase block leading-none">Desde</span>
+            <span className="text-[10px] font-mono uppercase block leading-none">
+              {v.es_referencial ? 'Precio ref.' : 'Desde'}
+            </span>
             <span className="font-display text-lg leading-none">S/{v.precio_desde}<span className="text-xs">/h</span></span>
           </div>
         )}
@@ -469,6 +474,11 @@ function ExploreCard({ v }: { v: ExploreVenue }) {
           {v.distrito && (
             <div className="bg-ink/90 text-cream text-[10px] font-mono uppercase px-2 py-1 tracking-wider">
               {v.distrito}
+            </div>
+          )}
+          {v.es_referencial && (
+            <div className="bg-cream text-ink text-[10px] font-mono uppercase px-2 py-1 tracking-wider border border-ink">
+              Referencial
             </div>
           )}
           {v.distancia_km !== undefined && (

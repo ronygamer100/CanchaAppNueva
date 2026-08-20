@@ -71,14 +71,14 @@ export default function VenuePublicPage() {
   }, [slug]);
 
   useEffect(() => {
-    if (!selectedCourt) return;
+    if (!selectedCourt || !venue?.reservas_habilitadas) return;
     apiFetch<DayAvailability>(
       `/api/public/venues/${slug}/courts/${selectedCourt.id}/availability?fecha=${fecha}`,
     )
       .then(setAvailability)
       .catch(() => setAvailability(null));
     setSelectedSlots([]);
-  }, [slug, selectedCourt, fecha]);
+  }, [slug, selectedCourt, fecha, venue?.reservas_habilitadas]);
 
   const horas = selectedSlots.length;
   const adelantoTotal = selectedCourt ? selectedCourt.adelanto_monto * horas : 0;
@@ -123,6 +123,10 @@ export default function VenuePublicPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
+    if (!venue?.reservas_habilitadas) {
+      setFormError('Esta ficha todavía no acepta reservas en fubito.');
+      return;
+    }
     if (selectedSlots.length === 0 || !selectedCourt || !horaInicio || !horaFin) return;
     if (!screenshot) {
       setFormError('Debes subir la captura del Yape para confirmar la reserva.');
@@ -288,7 +292,9 @@ export default function VenuePublicPage() {
       {/* Hero del venue */}
       <section className="bg-pitch-900 text-cream">
         <div className="max-w-6xl mx-auto px-6 py-12 md:py-16">
-          <p className="eyebrow !text-pitch-400 mb-4">Reserva online</p>
+          <p className="eyebrow !text-pitch-400 mb-4">
+            {venue.es_referencial ? 'Ficha referencial' : 'Reserva online'}
+          </p>
           <h1 className="display-xl break-words">{venue.nombre}</h1>
           <div className="mt-6 flex flex-wrap gap-x-8 gap-y-2 text-sm">
             <span className="flex items-center gap-2"><span className="text-pitch-400">📍</span>{venue.direccion}</span>
@@ -309,6 +315,40 @@ export default function VenuePublicPage() {
             className="w-full h-64 md:h-80 object-cover border-2 border-ink"
           />
         </div>
+      )}
+
+      {venue.es_referencial && (
+        <section className="max-w-6xl mx-auto px-6 mb-8">
+          <div className="border-2 border-ink bg-pitch-100 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="max-w-3xl">
+              <p className="eyebrow mb-2">Información por validar</p>
+              <p className="text-sm text-ink/70">
+                Esta ficha se preparó con información pública. La foto, los servicios,
+                horarios y precios son referenciales hasta que el negocio los confirme.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+              {venue.telefono_publico && (
+                <a
+                  href={`tel:${venue.telefono_publico.replace(/\s/g, '')}`}
+                  className="btn-ghost text-center"
+                >
+                  Llamar al local
+                </a>
+              )}
+              {venue.fuente_url && (
+                <a
+                  href={venue.fuente_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-primary text-center"
+                >
+                  Ver fuente
+                </a>
+              )}
+            </div>
+          </div>
+        </section>
       )}
 
       {venue.lat && venue.lng && (
@@ -369,7 +409,9 @@ export default function VenuePublicPage() {
                   )}
                   <div className="flex items-baseline justify-between mt-3">
                     <span className="font-display text-2xl">S/{c.precio_hora}<span className="text-sm">/h</span></span>
-                    <span className="text-xs text-ink/50 font-mono">adelanto S/{c.adelanto_monto}</span>
+                    <span className="text-xs text-ink/50 font-mono">
+                      {venue.es_referencial ? 'precio referencial' : `adelanto S/${c.adelanto_monto}`}
+                    </span>
                   </div>
                   {/* Características de la cancha */}
                   {c.amenities && c.amenities.length > 0 && (
@@ -397,7 +439,7 @@ export default function VenuePublicPage() {
         )}
 
         {/* Disponibilidad de la cancha seleccionada */}
-        {selectedCourt && (
+        {selectedCourt && venue.reservas_habilitadas && (
           <>
             {selectedCourt.amenities && selectedCourt.amenities.length > 0 && (
               <div className="mb-8 border-2 border-ink/10 p-4">
@@ -466,6 +508,12 @@ export default function VenuePublicPage() {
               <p className="text-ink/60 text-center py-12">No hay horarios configurados.</p>
             )}
           </>
+        )}
+
+        {!venue.reservas_habilitadas && (
+          <div className="border-t-2 border-ink/10 pt-6 text-sm text-ink/60">
+            La reserva online se activará cuando el negocio valide y administre esta ficha.
+          </div>
         )}
       </section>
 

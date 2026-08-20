@@ -74,6 +74,11 @@ class VenueOut(VenueBase):
     foto_url: Optional[str] = None
     logo_url: Optional[str] = None
     yape_qr_url: Optional[str] = None
+    telefono_publico: Optional[str] = None
+    fuente_nombre: Optional[str] = None
+    fuente_url: Optional[str] = None
+    es_referencial: bool = False
+    reservas_habilitadas: bool = True
 
 
 # ---------- Court (Cancha dentro de un Venue) ----------

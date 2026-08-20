@@ -108,6 +108,31 @@ def _check_and_migrate():
         except Exception as e:
             print(f"[migrate] venues distrito: {e}")
 
+        # Metadatos para fichas públicas todavía no administradas por el local
+        try:
+            conn.execute(text(
+                "ALTER TABLE venues ADD COLUMN IF NOT EXISTS "
+                "telefono_publico VARCHAR(30)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE venues ADD COLUMN IF NOT EXISTS "
+                "fuente_nombre VARCHAR(80)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE venues ADD COLUMN IF NOT EXISTS "
+                "fuente_url VARCHAR(500)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE venues ADD COLUMN IF NOT EXISTS "
+                "es_referencial BOOLEAN NOT NULL DEFAULT FALSE"
+            ))
+            conn.execute(text(
+                "ALTER TABLE venues ADD COLUMN IF NOT EXISTS "
+                "reservas_habilitadas BOOLEAN NOT NULL DEFAULT TRUE"
+            ))
+        except Exception as e:
+            print(f"[migrate] venue catalog metadata: {e}")
+
         # Columna amenities en courts (idempotente)
         try:
             conn.execute(text(
@@ -150,6 +175,9 @@ def _check_and_migrate():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _check_and_migrate()
+    if settings.SEED_AREQUIPA_CATALOG:
+        from app.services.catalog_seed import seed_arequipa_catalog
+        seed_arequipa_catalog()
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     yield
 

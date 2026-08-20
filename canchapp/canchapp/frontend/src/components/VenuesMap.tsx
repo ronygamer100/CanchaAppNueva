@@ -13,6 +13,7 @@ export interface VenueMapPin {
   foto_url?: string | null;
   precio_desde?: number | null;
   court_count: number;
+  es_referencial?: boolean;
 }
 
 interface VenuesMapProps {
@@ -95,8 +96,9 @@ export default function VenuesMap({ venues, apiUrl, height = 480 }: VenuesMapPro
             </p>
             <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #444; margin-bottom: 10px;">
               <span>${v.court_count} cancha${v.court_count > 1 ? 's' : ''}</span>
-              ${v.precio_desde != null ? `<span>·</span><span>Desde S/${v.precio_desde}/h</span>` : ''}
+              ${v.precio_desde != null ? `<span>·</span><span>${v.es_referencial ? 'Precio ref.' : 'Desde'} S/${v.precio_desde}/h</span>` : ''}
             </div>
+            ${v.es_referencial ? '<p style="font-size: 10px; text-transform: uppercase; font-family: JetBrains Mono, monospace; color: #666; margin: 0 0 8px 0;">Ficha referencial</p>' : ''}
             <a href="/c/${v.slug}" style="
               display: inline-block;
               background: #0A0A0A; color: #F5F1E8;

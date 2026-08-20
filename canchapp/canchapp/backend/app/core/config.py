@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     SUPABASE_SECRET_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
     SUPABASE_STORAGE_BUCKET: str = "uploads"
+    SEED_AREQUIPA_CATALOG: bool = True
 
 
 settings = Settings()

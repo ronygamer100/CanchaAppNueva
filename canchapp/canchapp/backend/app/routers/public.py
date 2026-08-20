@@ -81,6 +81,8 @@ def list_venues_public(
 
         # Filtro "disponible hoy" — verificar que alguna cancha tenga al menos un slot libre
         if disponible_hoy:
+            if not v.reservas_habilitadas:
+                continue
             from app.services.availability import get_day_availability
             tiene_libre = False
             for c in canchas_activas:
@@ -104,6 +106,8 @@ def list_venues_public(
             "precio_desde": precio_min,
             "lat": v.lat,
             "lng": v.lng,
+            "es_referencial": v.es_referencial,
+            "reservas_habilitadas": v.reservas_habilitadas,
         })
 
     # Ordenar
@@ -132,12 +136,21 @@ def get_venue_public(slug: str, db: Session = Depends(get_db)):
         descripcion=venue.descripcion,
         lat=venue.lat,
         lng=venue.lng,
+        distrito=venue.distrito,
         hora_apertura=venue.hora_apertura,
         hora_cierre=venue.hora_cierre,
+        modo_confirmacion=venue.modo_confirmacion,
+        auto_confirm_minutes=venue.auto_confirm_minutes,
+        amenities=venue.amenities or [],
         foto_url=venue.foto_url,
         logo_url=venue.logo_url,
         yape_qr_url=venue.yape_qr_url,
-        owner_whatsapp=venue.owner.whatsapp,
+        telefono_publico=venue.telefono_publico,
+        fuente_nombre=venue.fuente_nombre,
+        fuente_url=venue.fuente_url,
+        es_referencial=venue.es_referencial,
+        reservas_habilitadas=venue.reservas_habilitadas,
+        owner_whatsapp=venue.telefono_publico or venue.owner.whatsapp,
         owner_nombre_negocio=venue.owner.nombre_negocio,
         courts=[CourtPublicLite.model_validate(c) for c in canchas_activas],
     )
@@ -157,6 +170,11 @@ def get_availability(
     )
     if not court:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    if not court.venue.reservas_habilitadas:
+        raise HTTPException(
+            status_code=403,
+            detail="Esta ficha es referencial y todavía no acepta reservas en fubito",
+        )
     # Aplica auto-confirmaciones vencidas antes de calcular slots
     sweep_auto_confirms(db, owner_id=court.venue.owner_id)
     slots = get_day_availability(db, court, fecha)
@@ -186,6 +204,11 @@ async def create_reservation(
     )
     if not court:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    if not court.venue.reservas_habilitadas:
+        raise HTTPException(
+            status_code=403,
+            detail="Esta ficha es referencial y todavía no acepta reservas en fubito",
+        )
 
     from datetime import time as dt_time
     try:

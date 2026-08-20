@@ -13,6 +13,11 @@ export interface Venue {
   foto_url?: string | null;
   logo_url?: string | null;
   yape_qr_url?: string | null;
+  telefono_publico?: string | null;
+  fuente_nombre?: string | null;
+  fuente_url?: string | null;
+  es_referencial: boolean;
+  reservas_habilitadas: boolean;
   distrito?: string | null;
   modo_confirmacion: 'manual' | 'auto';
   auto_confirm_minutes: number;
