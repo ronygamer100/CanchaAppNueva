@@ -74,6 +74,15 @@ export default function ExplorarPage() {
   // Drawer de filtros en mobile
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
+  useEffect(() => {
+    if (!showFiltersMobile) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showFiltersMobile]);
+
   // Geolocalización
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsState, setGpsState] = useState<'idle' | 'pidiendo' | 'ok' | 'denegado'>('idle');
@@ -239,14 +248,14 @@ export default function ExplorarPage() {
           {/* SIDEBAR FILTROS — visible en lg+; en mobile aparece como drawer overlay */}
           {showFiltersMobile && (
             <div
-              className="lg:hidden fixed inset-0 bg-ink/50 z-40"
+              className="fixed inset-0 z-[1200] bg-forest/45 lg:hidden"
               onClick={() => setShowFiltersMobile(false)}
             />
           )}
           <aside className={`
             card-brut bg-white
             ${showFiltersMobile
-              ? 'fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto !rounded-t-lg !rounded-b-none !border-x-0 !border-b-0'
+              ? 'fixed inset-x-0 bottom-0 top-16 z-[1210] overflow-y-auto overscroll-contain !rounded-t-lg !rounded-b-none !border-x-0 !border-b-0'
               : 'hidden'
             }
             lg:!relative lg:!inset-auto lg:block lg:sticky lg:top-24 lg:self-start
@@ -397,7 +406,7 @@ export default function ExplorarPage() {
           </aside>
 
           {/* RESULTADOS */}
-          <section>
+          <section className={showFiltersMobile ? 'invisible lg:visible' : ''}>
             <p className="text-sm text-ink/60 mb-4">
               {loading ? 'Buscando…' : `${venues.length} resultado${venues.length === 1 ? '' : 's'}`}
             </p>
