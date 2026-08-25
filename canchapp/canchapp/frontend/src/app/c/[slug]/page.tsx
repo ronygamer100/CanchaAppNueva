@@ -9,6 +9,7 @@ import {
   Info, Mail, MapPin, Phone, ShieldCheck, Smartphone, UserRound,
 } from 'lucide-react';
 import FubitoLogo from '@/components/FubitoLogo';
+import PublicFooter from '@/components/PublicFooter';
 import { LoadingScreen } from '@/components/Skeleton';
 import MapPicker from '@/components/MapPicker';
 import { AMENITIES_BY_SLUG } from '@/lib/amenities';
@@ -96,6 +97,7 @@ export default function VenuePublicPage() {
   const [success, setSuccess] = useState<ReservationCreated | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   useEffect(() => {
     if (!getPlayerToken()) return;
@@ -229,6 +231,11 @@ export default function VenuePublicPage() {
       return;
     }
     if (!selectedCourt || !startTime || !endTime || selectedSlots.length === 0) return;
+
+    if (!venue.es_referencial && !termsAccepted) {
+      setFormError('Acepta los Términos y la Política de devoluciones para continuar con el pago.');
+      return;
+    }
 
     const normalizedWhatsApp = normalizePeruvianWhatsApp(whatsapp);
     if (!normalizedWhatsApp) {
@@ -613,18 +620,30 @@ export default function VenuePublicPage() {
         {selectedSlots.length > 0 && selectedCourt && startTime && endTime && (
           <section id="datos-reserva" className="mt-4 bg-white px-5 py-9 sm:rounded-lg sm:px-7">
             <p className="text-sm font-semibold text-pitch-700">Último paso</p>
-            <h2 className="mt-1 font-display text-3xl font-black">Completa tus datos</h2>
+            <h2 className="mt-1 font-display text-3xl font-black">Resumen de compra</h2>
             <p className="mt-2 capitalize text-ink/60">
               {formatFechaLarga(fecha)} · {formatHora(startTime)} a {formatHora(endTime)}
             </p>
 
-            <div className="mt-6 grid grid-cols-3 gap-3 rounded-lg bg-sky p-4 text-center">
-              <SummaryValue label="Duración" value={`${hours}h`} />
-              <SummaryValue label="Precio/hora" value={`S/ ${selectedCourt.precio_hora}`} />
-              <SummaryValue label="Total a pagar" value={`S/ ${priceTotal}`} accent />
+            <div className="mt-6 overflow-hidden rounded-lg border border-forest/10 bg-white">
+              <PurchaseRow label="Servicio" value={`Reserva de ${selectedCourt.nombre}`} />
+              <PurchaseRow label="Local" value={venue.nombre} />
+              <PurchaseRow label="Fecha" value={formatFechaLarga(fecha)} />
+              <PurchaseRow label="Horario" value={`${formatHora(startTime)} a ${formatHora(endTime)}`} />
+              <PurchaseRow label="Cálculo" value={`${hours}h × S/ ${selectedCourt.precio_hora}`} />
+              <PurchaseRow label="Total a pagar" value={`S/ ${priceTotal.toFixed(2)}`} total />
             </div>
 
+            {!venue.es_referencial && (
+              <p className="mt-4 rounded-lg bg-sky px-4 py-3 text-sm text-ink/70">
+                <strong>Comercio que recibe el pago:</strong>{' '}
+                {slug === 'cancha-uwu' ? 'TECHDG, RUC 10711317266' : venue.owner_nombre_negocio}.
+                Fubito facilita la reserva y Culqi procesa el pago.
+              </p>
+            )}
+
             <form onSubmit={handleSubmit} className="mt-7 space-y-6">
+              <h3 className="font-display text-2xl font-black">Datos del comprador</h3>
               <div>
                 <label className="label-field">Tu nombre</label>
                 <input
@@ -693,13 +712,36 @@ export default function VenuePublicPage() {
                 </div>
               </div>
 
+              {!venue.es_referencial && (
+                <label className="flex items-start gap-3 rounded-lg border border-forest/20 bg-white p-4">
+                  <input
+                    required
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(event) => {
+                      setTermsAccepted(event.target.checked);
+                      setFormError(null);
+                    }}
+                    className="mt-0.5 h-5 w-5 shrink-0 accent-[#19763A]"
+                  />
+                  <span className="text-sm leading-relaxed text-ink/70">
+                    He revisado el local, fecha, horario y total. Acepto los{' '}
+                    <Link href="/terminos" target="_blank" className="link">Términos y condiciones</Link>
+                    {' '}y la{' '}
+                    <Link href="/politica-cambios-devoluciones" target="_blank" className="link">
+                      Política de cambios y devoluciones
+                    </Link>.
+                  </span>
+                </label>
+              )}
+
               {formError && (
                 <p className="rounded-lg bg-clay/10 px-4 py-3 text-sm font-semibold text-clay">{formError}</p>
               )}
 
               <button
                 type="submit"
-                disabled={submitting || (!venue.es_referencial && (!venue.culqi_ready || !culqiLoaded))}
+                disabled={submitting || (!venue.es_referencial && (!venue.culqi_ready || !culqiLoaded || !termsAccepted))}
                 className="btn-accent btn-lg w-full"
               >
                 {submitting
@@ -710,12 +752,19 @@ export default function VenuePublicPage() {
                       ? 'Pago aún no disponible'
                       : !culqiLoaded
                         ? 'Cargando pago con Yape...'
-                        : `Pagar S/ ${priceTotal} con Yape`}
+                        : `Pagar ahora S/ ${priceTotal.toFixed(2)} con Yape`}
               </button>
+              {!venue.es_referencial && (
+                <p className="text-center text-xs text-ink/50">
+                  Pago seguro procesado por Culqi. Recibirás la confirmación al finalizar.
+                </p>
+              )}
             </form>
           </section>
         )}
       </div>
+
+      <PublicFooter />
 
       {selectedSlots.length > 0 && startTime && endTime && (
         <div className="fixed bottom-0 inset-x-0 z-40 border-t border-forest/10 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(18,60,50,0.10)] backdrop-blur">
@@ -726,7 +775,7 @@ export default function VenuePublicPage() {
                 {formatHora(startTime)} a {formatHora(endTime)} · <span className="text-clay">S/ {priceTotal}</span>
               </p>
             </div>
-            <a href="#datos-reserva" className="btn-accent shrink-0">Continuar</a>
+            <a href="#datos-reserva" className="btn-accent shrink-0">Ir al pago</a>
           </div>
         </div>
       )}
@@ -734,11 +783,11 @@ export default function VenuePublicPage() {
   );
 }
 
-function SummaryValue({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+function PurchaseRow({ label, value, total = false }: { label: string; value: string; total?: boolean }) {
   return (
-    <div>
-      <p className="text-xs text-ink/55">{label}</p>
-      <p className={`font-display text-xl font-black ${accent ? 'text-clay' : ''}`}>{value}</p>
+    <div className={`flex min-h-14 items-center justify-between gap-4 border-b border-forest/10 px-4 py-3 last:border-b-0 ${total ? 'bg-pitch-100' : ''}`}>
+      <p className={`${total ? 'font-bold text-forest' : 'text-sm text-ink/55'}`}>{label}</p>
+      <p className={`text-right capitalize ${total ? 'font-display text-2xl font-black text-clay' : 'font-semibold'}`}>{value}</p>
     </div>
   );
 }

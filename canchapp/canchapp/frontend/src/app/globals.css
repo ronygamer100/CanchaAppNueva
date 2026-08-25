@@ -129,6 +129,26 @@ button, input, select, textarea {
     @apply rounded-lg bg-ink/5;
     animation: skeleton-pulse 1.4s ease-in-out infinite;
   }
+
+  .legal-copy {
+    @apply space-y-8 text-base text-ink/75;
+  }
+
+  .legal-copy section {
+    @apply space-y-3;
+  }
+
+  .legal-copy h2 {
+    @apply font-display text-2xl font-black text-forest;
+  }
+
+  .legal-copy ol,
+  .legal-copy ul {
+    @apply space-y-2 pl-6;
+  }
+
+  .legal-copy ol { @apply list-decimal; }
+  .legal-copy ul { @apply list-disc; }
 }
 
 .responsive-map .leaflet-container {
@@ -218,4 +238,8 @@ button, input, select, textarea {
 @keyframes skeleton-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+@media print {
+  .print\:hidden { display: none !important; }
 }

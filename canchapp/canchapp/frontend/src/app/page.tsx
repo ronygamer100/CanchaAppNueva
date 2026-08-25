@@ -7,6 +7,7 @@ import {
   Navigation, Search, Store, UserRound,
 } from 'lucide-react';
 import FubitoLogo from '@/components/FubitoLogo';
+import PublicFooter from '@/components/PublicFooter';
 import VenuesMap, { type VenueMapPin } from '@/components/VenuesMap';
 import { AMENITIES_BY_SLUG } from '@/lib/amenities';
 import { apiFetch, API_URL } from '@/lib/api';
@@ -248,6 +249,8 @@ export default function HomePage() {
         </div>
       </section>
 
+      <PublicFooter />
+
       <PublicBottomNav />
     </main>
   );
@@ -302,7 +305,7 @@ function VenueCard({ venue }: { venue: PublicVenue }) {
             </p>
           </div>
           <Link href={`/c/${venue.slug}`} className="btn-primary btn-sm shrink-0">
-            Ver horarios
+            Reservar ahora
             <ChevronRight size={18} />
           </Link>
         </div>

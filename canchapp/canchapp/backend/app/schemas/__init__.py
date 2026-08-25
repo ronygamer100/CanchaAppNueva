@@ -248,6 +248,30 @@ class DayAvailability(BaseModel):
     slots: List[SlotInfo]
 
 
+# ---------- Libro de Reclamaciones ----------
+class ComplaintCreate(BaseModel):
+    venue_slug: Optional[str] = Field(default=None, max_length=80)
+    consumer_name: str = Field(min_length=3, max_length=160)
+    document_type: str = Field(pattern="^(DNI|CE|Pasaporte)$")
+    document_number: str = Field(min_length=6, max_length=20)
+    address: str = Field(min_length=4, max_length=255)
+    phone: str = Field(min_length=7, max_length=30)
+    email: EmailStr
+    is_minor: bool = False
+    guardian_name: Optional[str] = Field(default=None, max_length=160)
+    request_type: str = Field(pattern="^(reclamo|queja)$")
+    service_description: str = Field(min_length=4, max_length=255)
+    amount: Optional[float] = Field(default=None, ge=0)
+    detail: str = Field(min_length=10, max_length=3000)
+    consumer_request: str = Field(min_length=4, max_length=1500)
+
+
+class ComplaintCreatedOut(BaseModel):
+    code: str
+    created_at: datetime
+    response_deadline_days: int = 30
+
+
 # ---------- BlockedSlot ----------
 class BlockedSlotCreate(BaseModel):
     fecha: date

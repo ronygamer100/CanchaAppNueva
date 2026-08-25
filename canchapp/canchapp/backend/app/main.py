@@ -9,9 +9,9 @@ import sys
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.models import Owner, Venue, Court, Reservation, BlockedSlot  # noqa: F401
+from app.models import Owner, Venue, Court, Reservation, BlockedSlot, Complaint  # noqa: F401
 from app.models.player import Player  # noqa: F401
-from app.routers import auth, venues, courts, reservations, public, dashboard, player, billing
+from app.routers import auth, venues, courts, reservations, public, dashboard, player, billing, complaints
 
 
 def _check_and_migrate():
@@ -298,6 +298,7 @@ app.include_router(public.router)
 app.include_router(dashboard.router)
 app.include_router(player.router)
 app.include_router(billing.router)
+app.include_router(complaints.router)
 
 
 @app.get("/")
