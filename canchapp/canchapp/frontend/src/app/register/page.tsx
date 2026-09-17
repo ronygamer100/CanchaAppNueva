@@ -32,6 +32,7 @@ export default function RegisterPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   function update<K extends keyof typeof form>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -61,6 +62,7 @@ export default function RegisterPage() {
   }
 
   async function handleGoogle(credential: string) {
+    if (googleLoading) return;
     if (!googleData.nombre_negocio.trim()) {
       setError('Completa el nombre del negocio antes de continuar con Google');
       return;
@@ -70,6 +72,7 @@ export default function RegisterPage() {
       setError('Verifica el número de WhatsApp (debe ser celular peruano)');
       return;
     }
+    setGoogleLoading(true);
     setError(null);
     try {
       const data = await apiFetch<{ access_token: string }>(
@@ -78,12 +81,14 @@ export default function RegisterPage() {
           credential,
           nombre_negocio: googleData.nombre_negocio,
           whatsapp: wa,
-        } },
+        }, retry: 2, retryDelayMs: 700 },
       );
       setToken(data.access_token);
       router.push('/dashboard');
     } catch (err) {
       setError(humanizeError(err));
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -143,7 +148,16 @@ export default function RegisterPage() {
                   label="WhatsApp del negocio"
                 />
               </div>
-              <GoogleSignIn onCredential={handleGoogle} text="signup_with" width={320} />
+              <GoogleSignIn
+                onCredential={handleGoogle}
+                onError={setError}
+                disabled={googleLoading}
+                text="signup_with"
+                width={320}
+              />
+              {googleLoading && (
+                <p className="mt-2 text-sm font-medium text-ink/70">Creando tu cuenta…</p>
+              )}
               <button
                 type="button"
                 onClick={() => { setShowGoogleForm(false); setError(null); }}

@@ -9,7 +9,11 @@ from app.core.security import hash_password, verify_password, create_access_toke
 from app.core.deps import get_current_owner
 from app.models.owner import Owner
 from app.models.player import Player
-from app.services.google_auth import verify_google_token
+from app.services.google_auth import (
+    GoogleAuthConfigurationError,
+    GoogleAuthUnavailableError,
+    verify_google_token,
+)
 from app.schemas import OwnerRegister, Token, OwnerOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -23,6 +27,25 @@ class GoogleOwnerRegisterIn(BaseModel):
     credential: str
     nombre_negocio: str = Field(min_length=2, max_length=120)
     whatsapp: str = Field(pattern=r"^\+519\d{8}$")
+
+
+def verified_google_user(credential: str):
+    try:
+        user = verify_google_token(credential)
+    except GoogleAuthConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="El acceso con Google no está configurado en el servidor.",
+        ) from exc
+    except GoogleAuthUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google no respondió a tiempo. Intenta nuevamente.",
+        ) from exc
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Token de Google inválido")
+    return user
 
 
 # --------- Registro/Login clásicos del dueño (legacy, sigue funcionando) ---------
@@ -70,9 +93,7 @@ def google_owner_login(data: GoogleTokenIn, db: Session = Depends(get_db)):
     """Login del DUEÑO con Google. Solo funciona si el dueño ya tiene cuenta
     creada (vinculada o no a Google). Para registro nuevo, usar /google/owner/register.
     """
-    g = verify_google_token(data.credential)
-    if not g:
-        raise HTTPException(status_code=401, detail="Token de Google inválido")
+    g = verified_google_user(data.credential)
 
     # Buscar por google_id o por email
     owner = (
@@ -99,9 +120,7 @@ def google_owner_login(data: GoogleTokenIn, db: Session = Depends(get_db)):
 def google_owner_register(data: GoogleOwnerRegisterIn, db: Session = Depends(get_db)):
     """Registro de un dueño nuevo usando Google. Requiere también nombre_negocio
     y whatsapp para completar el perfil."""
-    g = verify_google_token(data.credential)
-    if not g:
-        raise HTTPException(status_code=401, detail="Token de Google inválido")
+    g = verified_google_user(data.credential)
 
     # Si ya existe, devolver token (login implícito)
     existing = (
@@ -135,9 +154,7 @@ def google_owner_register(data: GoogleOwnerRegisterIn, db: Session = Depends(get
 @router.post("/google/player", response_model=Token)
 def google_player_auth(data: GoogleTokenIn, db: Session = Depends(get_db)):
     """Login/registro automático del jugador con Google."""
-    g = verify_google_token(data.credential)
-    if not g:
-        raise HTTPException(status_code=401, detail="Token de Google inválido")
+    g = verified_google_user(data.credential)
 
     player = (
         db.query(Player)

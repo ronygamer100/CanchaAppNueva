@@ -27,6 +27,7 @@ function normalizeApiUrl(value?: string): string {
 }
 
 export const API_URL = normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL);
+const DEFAULT_TIMEOUT_MS = 15_000;
 
 const OWNER_KEY = 'canchapp_token';
 const PLAYER_KEY = 'canchapp_player_token';
@@ -60,7 +61,61 @@ type FetchOpts = {
   body?: unknown;
   formData?: FormData;
   auth?: boolean | 'player';  // true=owner, 'player'=player
+  timeoutMs?: number;
+  retry?: number;
+  retryDelayMs?: number;
 };
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('Timeout: el servidor tardó demasiado en responder');
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+function isRetryableError(error: unknown): boolean {
+  return error instanceof Error && (
+    error.message.includes('Timeout:') ||
+    error.message.includes('Failed to fetch') ||
+    error.message.includes('NetworkError')
+  );
+}
+
+async function fetchWithRetry(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+  retries: number,
+  retryDelayMs: number,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    if (attempt > 0) {
+      await new Promise((resolve) => window.setTimeout(resolve, retryDelayMs * attempt));
+    }
+    try {
+      const response = await fetchWithTimeout(input, init, timeoutMs);
+      if (response.status < 500 || attempt === retries) return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries || !isRetryableError(error)) throw error;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('No se pudo conectar con el servidor');
+}
 
 export async function apiFetch<T = unknown>(path: string, opts: FetchOpts = {}): Promise<T> {
   const headers: Record<string, string> = {};
@@ -78,11 +133,11 @@ export async function apiFetch<T = unknown>(path: string, opts: FetchOpts = {}):
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetchWithRetry(`${API_URL}${path}`, {
     method: opts.method || 'GET',
     headers,
     body,
-  });
+  }, opts.timeoutMs || DEFAULT_TIMEOUT_MS, opts.retry || 0, opts.retryDelayMs || 500);
 
   if (!res.ok) {
     let detail = `Error ${res.status}`;
@@ -102,7 +157,7 @@ export async function apiDownload(path: string, suggestedFilename?: string): Pro
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, { headers });
+  const res = await fetchWithTimeout(`${API_URL}${path}`, { headers }, 30_000);
   if (!res.ok) {
     let detail = `Error ${res.status}`;
     try {
@@ -136,7 +191,10 @@ export async function loginWithEmail(email: string, password: string) {
   const fd = new FormData();
   fd.append('username', email);
   fd.append('password', password);
-  const res = await fetch(`${API_URL}/api/auth/login`, { method: 'POST', body: fd });
+  const res = await fetchWithTimeout(
+    `${API_URL}/api/auth/login`,
+    { method: 'POST', body: fd },
+  );
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.detail || 'Credenciales inválidas');

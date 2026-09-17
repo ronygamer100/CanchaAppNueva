@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,11 +31,13 @@ export default function LoginPage() {
   }
 
   async function handleGoogle(credential: string) {
+    if (googleLoading) return;
+    setGoogleLoading(true);
     setError(null);
     try {
       const data = await apiFetch<{ access_token: string }>(
         '/api/auth/google/owner/login',
-        { method: 'POST', body: { credential } },
+        { method: 'POST', body: { credential }, retry: 2, retryDelayMs: 700 },
       );
       setToken(data.access_token);
       router.push('/dashboard');
@@ -45,6 +48,8 @@ export default function LoginPage() {
       } else {
         setError(msg);
       }
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -69,7 +74,16 @@ export default function LoginPage() {
           <h2 className="display-md mb-7">Inicia sesión</h2>
 
           <div className="mb-6">
-            <GoogleSignIn onCredential={handleGoogle} text="signin_with" width={320} />
+            <GoogleSignIn
+              onCredential={handleGoogle}
+              onError={setError}
+              disabled={googleLoading}
+              text="signin_with"
+              width={320}
+            />
+            {googleLoading && (
+              <p className="mt-2 text-sm font-medium text-ink/70">Validando tu cuenta…</p>
+            )}
           </div>
 
           <div className="flex items-center gap-3 my-6">

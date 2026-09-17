@@ -1,8 +1,10 @@
 from datetime import date
+from threading import Lock
+from time import monotonic
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.database import get_db
 from app.core.config import settings as app_settings
@@ -32,6 +34,10 @@ from app.models.player import Player
 
 router = APIRouter(prefix="/api/public", tags=["public"])
 
+_catalog_cache: dict[str, tuple[float, list[dict]]] = {}
+_catalog_cache_lock = Lock()
+_CATALOG_CACHE_SECONDS = 20
+
 @router.get("/venues")
 def list_venues_public(
     db: Session = Depends(get_db),
@@ -43,8 +49,19 @@ def list_venues_public(
     ordenar: str = Query("recientes", pattern="^(recientes|precio_asc|precio_desc|nombre)$"),
 ):
     """Catálogo público con filtros opcionales."""
+    cache_key = "|".join([
+        q or "", distrito or "", str(precio_max) if precio_max is not None else "",
+        amenities or "", str(disponible_hoy), ordenar,
+    ])
+    if not disponible_hoy:
+        with _catalog_cache_lock:
+            cached = _catalog_cache.get(cache_key)
+            if cached and monotonic() - cached[0] < _CATALOG_CACHE_SECONDS:
+                return cached[1]
+
     venues = (
         db.query(Venue)
+        .options(selectinload(Venue.courts))
         .order_by(Venue.created_at.desc())
         .all()
     )
@@ -123,12 +140,23 @@ def list_venues_public(
         out.sort(key=lambda x: x["nombre"].lower())
     # "recientes" ya viene en ese orden
 
+    if not disponible_hoy:
+        with _catalog_cache_lock:
+            _catalog_cache[cache_key] = (monotonic(), out)
+            if len(_catalog_cache) > 100:
+                oldest_key = min(_catalog_cache, key=lambda key: _catalog_cache[key][0])
+                _catalog_cache.pop(oldest_key, None)
     return out
 
 
 @router.get("/venues/{slug}", response_model=VenuePublicOut)
 def get_venue_public(slug: str, db: Session = Depends(get_db)):
-    venue = db.query(Venue).filter(Venue.slug == slug).first()
+    venue = (
+        db.query(Venue)
+        .options(selectinload(Venue.courts))
+        .filter(Venue.slug == slug)
+        .first()
+    )
     if not venue:
         raise HTTPException(status_code=404, detail="Negocio no encontrado")
     canchas_activas = [c for c in venue.courts if c.activa == 1]

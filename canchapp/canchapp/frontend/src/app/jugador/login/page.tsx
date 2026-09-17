@@ -21,32 +21,41 @@ function PlayerLoginContent() {
   const params = useSearchParams();
   const next = params.get('next') || '/jugador';
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   async function handleGoogle(credential: string) {
+    if (loading) return;
+    setLoading(true);
     setError(null);
     try {
       const data = await apiFetch<{ access_token: string }>(
         '/api/auth/google/player',
-        { method: 'POST', body: { credential } },
+        { method: 'POST', body: { credential }, retry: 2, retryDelayMs: 700 },
       );
       setPlayerToken(data.access_token);
       router.push(next);
     } catch (err) {
       setError(humanizeError(err));
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <LoginShell onGoogle={handleGoogle} error={error} />
+    <LoginShell onGoogle={handleGoogle} error={error} loading={loading} onError={setError} />
   );
 }
 
 function LoginShell({
   onGoogle,
   error,
+  loading = false,
+  onError,
 }: {
   onGoogle?: (credential: string) => void;
   error?: string | null;
+  loading?: boolean;
+  onError?: (message: string) => void;
 }) {
   return (
     <main className="min-h-screen md:grid md:grid-cols-2">
@@ -72,10 +81,18 @@ function LoginShell({
           </p>
 
           {onGoogle ? (
-            <GoogleSignIn onCredential={onGoogle} text="continue_with" width={320} />
+            <GoogleSignIn
+              onCredential={onGoogle}
+              onError={onError}
+              disabled={loading}
+              text="continue_with"
+              width={320}
+            />
           ) : (
             <div className="h-10 w-full max-w-[360px] skeleton" />
           )}
+
+          {loading && <p className="text-ink/70 text-sm font-medium mt-4">Validando tu cuenta…</p>}
 
           {error && <p className="text-clay text-sm font-medium mt-4">{error}</p>}
 
