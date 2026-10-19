@@ -1,10 +1,12 @@
-const PRODUCTION_API_URL = 'https://canchaappnueva-0dkn.onrender.com';
-
 function normalizeApiUrl(value?: string): string {
   const fallback = process.env.NODE_ENV === 'production'
-    ? PRODUCTION_API_URL
+    ? ''
     : 'http://localhost:8000';
   let raw = (value || '').trim();
+
+  // En producción, una URL vacía usa el mismo dominio y Next.js actúa como proxy.
+  if (!raw) return fallback;
+  if (raw.startsWith('/')) return raw.replace(/\/+$/, '');
 
   const markdownTarget = raw.match(/\]\((https?:\/\/[^)\s]+)\)/i);
   if (markdownTarget) {

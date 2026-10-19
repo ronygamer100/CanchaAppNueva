@@ -6,7 +6,7 @@ ven la disponibilidad del día, eligen uno o varios horarios y pagan la reserva 
 con Yape mediante Culqi. El pago llega directamente al comercio Culqi de cada
 dueño y la reserva queda confirmada sin subir capturas.
 
-**Stack:** FastAPI + PostgreSQL + Next.js 14 + Tailwind.
+**Stack:** FastAPI + PostgreSQL + Next.js 16 + React 19 + Tailwind.
 
 ---
 
@@ -38,6 +38,17 @@ canchapp/
 │   └── package.json
 └── docker-compose.yml    Postgres local
 ```
+
+## Producción con Dokploy
+
+El despliegue productivo usa un servicio **Compose** con PostgreSQL, FastAPI y
+Next.js. La configuración, variables y comprobaciones están documentadas en
+[`infra/dokploy/README.md`](infra/dokploy/README.md).
+
+- Rama: `main`
+- Compose Path: `infra/dokploy/docker-compose.yml`
+- Dominio: servicio `frontend`, puerto `3000`, path `/`
+- Servicios internos sin dominio público: `api` y `db`
 
 ## Prerrequisitos (Windows)
 

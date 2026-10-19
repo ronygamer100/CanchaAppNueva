@@ -312,6 +312,7 @@ def root():
     return {"status": "ok", "service": "fubito API", "version": "0.2.0"}
 
 
-@app.get("/health")
+@app.get("/health", include_in_schema=False)
+@app.get("/api/health", tags=["health"])
 def health():
     return {"status": "healthy"}
