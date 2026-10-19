@@ -16,8 +16,29 @@ No agregue dominios ni puertos públicos a `api` o `db`. El frontend reenvía
 ## Variables obligatorias
 
 - `APP_URL`: URL pública HTTPS, sin barra final.
-- `POSTGRES_PASSWORD`: contraseña larga con caracteres URL-safe.
+- `POSTGRES_PASSWORD`: contraseña larga. Puede contener caracteres reservados;
+  la API ya no la concatena dentro de `DATABASE_URL`.
 - `SECRET_KEY`: secreto estable; firma JWT y cifra las llaves privadas Culqi.
+
+No defina `DATABASE_URL` manualmente en Dokploy. La API recibe las variables
+`POSTGRES_*` por separado y construye la conexión sin corromper contraseñas que
+contengan `@`, `:`, `/`, `#` u otros caracteres especiales.
+
+### Cambio de contraseña con un volumen existente
+
+`POSTGRES_PASSWORD` solo inicializa PostgreSQL cuando el volumen está vacío.
+Si cambia esa variable después del primer despliegue, actualice también el rol
+desde la terminal del servicio `db`, sin escribir la contraseña en un comando:
+
+```text
+psql -U fubito -d fubito
+\password fubito
+\q
+```
+
+Introduzca dos veces el mismo valor configurado en `POSTGRES_PASSWORD` y luego
+reinicie o redespliegue `api`. No elimine `postgres_data` para resolver este
+error salvo que haya confirmado que puede perder todos los datos.
 
 `GOOGLE_CLIENT_ID` es necesario para Google Sign-In. Después de cambiarlo,
 reconstruya las imágenes porque Next.js lo incorpora durante el build.
