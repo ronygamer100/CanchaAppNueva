@@ -27,3 +27,9 @@ backend/uploads/*
 # OS
 .DS_Store
 Thumbs.db
+
+# Local verification artifacts
+.pytest_cache/
+frontend/test-results/
+frontend/playwright-report/
+tmp-pip-audit*.json

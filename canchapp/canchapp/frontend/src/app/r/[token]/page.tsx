@@ -24,9 +24,20 @@ export default function CancelacionPage() {
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    apiFetch<ReservationPublic>(`/api/public/reservations/${token}`)
-      .then(setReserva)
-      .catch((e) => setError(e.message));
+    let active = true;
+    const refresh = async () => {
+      try {
+        const item = await apiFetch<ReservationPublic>(`/api/public/reservations/${token}`);
+        if (!active) return;
+        setReserva(item);
+        if (!['reservado', 'procesando', 'verificacion'].includes(item.payment_status || '')) {
+          localStorage.removeItem(`fubito_checkout:${item.venue_slug}`);
+        }
+      } catch (err) { if (active) setError(humanizeError(err)); }
+    };
+    void refresh();
+    const timer = window.setInterval(refresh, 6000);
+    return () => { active = false; window.clearInterval(timer); };
   }, [token]);
 
   async function handleCancel() {
@@ -36,6 +47,7 @@ export default function CancelacionPage() {
         `/api/public/reservations/${token}/cancel`, { method: 'POST' },
       );
       setReserva(updated); setConfirming(false);
+      localStorage.removeItem(`fubito_checkout:${updated.venue_slug}`);
     } catch (err) {
       setError(humanizeError(err));
     } finally { setCancelling(false); }
@@ -59,6 +71,8 @@ export default function CancelacionPage() {
   const yaCancelada = reserva.estado === 'cancelada';
   const yaRechazada = reserva.estado === 'rechazada';
   const finalizada = yaCancelada || yaRechazada;
+  const waiting = ['procesando', 'verificacion'].includes(reserva.payment_status || '');
+  const held = reserva.payment_status === 'reservado';
   const esDemo = reserva.payment_status === 'demo';
   const montoPagado = reserva.monto_pagado ?? reserva.adelanto_monto ?? 0;
   const montoTotal = reserva.monto_total ?? montoPagado;
@@ -79,6 +93,12 @@ export default function CancelacionPage() {
       </section>
 
       <section className="max-w-2xl mx-auto px-6 py-10">
+        <div className="card-brut mb-6" role="status">
+          <p className="font-semibold">{waiting ? 'Pago en verificación' : held ? 'Horario separado, pendiente de pago' : reserva.estado === 'confirmada' ? 'Reserva confirmada' : 'Solicitud finalizada'}</p>
+          {waiting && <p className="mt-2">No vuelvas a pagar. El horario sigue protegido mientras el local verifica el resultado con Culqi. Esta página actualiza el estado automáticamente.</p>}
+          {held && <p className="mt-2">La separación vence a las {new Date(reserva.hold_expires_at || '').toLocaleTimeString('es-PE')}. Puedes liberarla para elegir un horario nuevamente. Todavía no hay un pago verificado.</p>}
+          {reserva.quote_source === 'legacy_estimated' && <p className="mt-2 text-sm">El importe histórico es una estimación conservada al actualizar el sistema.</p>}
+        </div>
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="card">
             <p className="eyebrow mb-2">Fecha</p>
@@ -96,9 +116,9 @@ export default function CancelacionPage() {
             <p className="font-medium">{reserva.jugador_nombre}</p>
           </div>
           <div className="card">
-            <p className="eyebrow mb-2">{esDemo ? 'Valor referencial' : 'Pago realizado'}</p>
+            <p className="eyebrow mb-2">{esDemo ? 'Valor referencial' : waiting || held ? 'Importe solicitado' : 'Pago neto verificado'}</p>
             <p className="font-display text-xl">
-              S/ {(esDemo ? montoTotal : montoPagado).toFixed(2)}
+              S/ {(esDemo || waiting || held ? montoTotal : montoPagado).toFixed(2)}
             </p>
           </div>
         </div>
@@ -111,7 +131,7 @@ export default function CancelacionPage() {
                 : 'Tu reserva fue rechazada por el dueño. Debería haberte contactado por WhatsApp.'}
             </p>
           </div>
-        ) : (
+        ) : !waiting ? (
           <div className="card-brut bg-cream">
             <p className="eyebrow !text-clay mb-3">Cancelar reserva</p>
             <p className="text-ink/80 mb-4">
@@ -136,8 +156,9 @@ export default function CancelacionPage() {
             )}
             {error && <p className="text-clay text-sm mt-4 font-medium">{error}</p>}
           </div>
-        )}
+        ) : null}
 
+        {finalizada && <a href={`/c/${reserva.venue_slug}`} className="btn-primary w-full mt-5">Elegir otro horario</a>}
         <p className="text-center text-xs text-ink/40 mt-8 font-mono">
           Guarda este link para consultar el estado de tu reserva.
         </p>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
@@ -94,10 +94,21 @@ export default function VenuePublicPage() {
   const [whatsapp, setWhatsapp] = useState('');
   const [culqiLoaded, setCulqiLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const heldReservation = useRef<ReservationCreated | null>(null);
+  const requestKey = useRef<string | null>(null);
+  const paymentSent = useRef(false);
+  const [holdNotice, setHoldNotice] = useState<ReservationCreated | null>(null);
   const [success, setSuccess] = useState<ReservationCreated | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`fubito_checkout:${slug}`);
+      if (saved) window.location.replace(`/r/${saved}`);
+    } catch { /* Storage can be unavailable in private browsing. */ }
+  }, [slug]);
 
   useEffect(() => {
     if (!getPlayerToken()) return;
@@ -147,6 +158,7 @@ export default function VenuePublicPage() {
   const dateOptions = [addDaysISO(0), addDaysISO(1), addDaysISO(2)];
 
   function toggleSlot(slot: Slot) {
+    if (heldReservation.current) return;
     if (slot.estado !== 'libre') return;
     setFormError(null);
 
@@ -188,41 +200,25 @@ export default function VenuePublicPage() {
   }
 
   async function submitReservation(culqiToken?: string) {
-    if (!venue || !selectedCourt || !startTime || !endTime) return;
-    const normalizedWhatsApp = normalizePeruvianWhatsApp(whatsapp);
-    if (!normalizedWhatsApp) {
-      setFormError('Escribe un celular peruano de 9 dígitos que empiece con 9.');
-      return;
-    }
-
+    const held = heldReservation.current;
+    if (!held || !culqiToken || paymentSent.current) return;
+    paymentSent.current = true;
     setSubmitting(true);
     try {
       const reservation = await apiFetch<ReservationCreated>(
-        `/api/public/venues/${slug}/courts/${selectedCourt.id}/reservations`,
-        {
-          method: 'POST',
-          auth: player ? 'player' : undefined,
-          body: {
-            fecha,
-            hora_inicio: startTime.slice(0, 5),
-            hora_fin: endTime.slice(0, 5),
-            jugador_nombre: nombre,
-            jugador_whatsapp: normalizedWhatsApp,
-            jugador_email: email,
-            culqi_token: culqiToken,
-          },
-        },
+        `/api/public/reservations/${held.cancel_token}/pay`,
+        { method: 'POST', body: { culqi_token: culqiToken }, timeoutMs: 40000 },
       );
       setSuccess(reservation);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (requestError) {
-      setFormError(humanizeError(requestError));
+    } catch {
+      // The server may have received the debit: keep the receipt and never ask to pay again.
+      window.location.assign(`/r/${held.cancel_token}`);
     } finally {
       setSubmitting(false);
     }
   }
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setFormError(null);
 
@@ -243,21 +239,53 @@ export default function VenuePublicPage() {
       return;
     }
 
-    if (venue.es_referencial) {
-      void submitReservation();
-      return;
-    }
 
-    if (venue.payment_mode !== 'full') {
+
+    if (!venue.es_referencial && venue.payment_mode !== 'full') {
       setFormError('El sistema de pago total se está actualizando. Inténtalo nuevamente en unos minutos.');
       return;
     }
-    if (!venue.culqi_ready || !venue.culqi_public_key) {
+    if (!venue.es_referencial && (!venue.culqi_ready || !venue.culqi_public_key)) {
       setFormError('Este local todavía no ha activado sus cobros en línea con Yape.');
       return;
     }
-    if (!culqiLoaded || !window.CulqiCheckout) {
+    if (!venue.es_referencial && (!culqiLoaded || !window.CulqiCheckout)) {
       setFormError('El pago con Yape todavía está cargando. Inténtalo en unos segundos.');
+      return;
+    }
+
+    if (submitting || paymentSent.current) return;
+    setSubmitting(true);
+    try {
+      if (!heldReservation.current) {
+        if (!requestKey.current) requestKey.current = crypto.randomUUID();
+        const hold = await apiFetch<ReservationCreated>(
+          `/api/public/venues/${slug}/courts/${selectedCourt.id}/reservations`,
+          { method: 'POST', auth: player ? 'player' : undefined, body: {
+            fecha, hora_inicio: startTime.slice(0, 5), hora_fin: endTime.slice(0, 5),
+            jugador_nombre: nombre, jugador_whatsapp: normalizedWhatsApp, jugador_email: email,
+            request_key: requestKey.current, expected_total_cents: Math.round(priceTotal * 100),
+            terms_accepted: termsAccepted,
+          } },
+        );
+        heldReservation.current = hold;
+        try { localStorage.setItem(`fubito_checkout:${slug}`, hold.cancel_token); } catch {}
+        setHoldNotice(hold);
+      }
+      if (venue.es_referencial) {
+        setSuccess(heldReservation.current);
+        return;
+      }
+    } catch (err) {
+      setFormError(humanizeError(err));
+      return;
+    } finally {
+      setSubmitting(false);
+    }
+    const held = heldReservation.current;
+    if (!held || !window.CulqiCheckout || !venue.culqi_public_key) return;
+    if (held.hold_expires_at && Date.parse(held.hold_expires_at) <= Date.now()) {
+      setFormError('La separación del horario terminó. Actualiza la página y elige un horario.');
       return;
     }
 
@@ -265,7 +293,7 @@ export default function VenuePublicPage() {
       settings: {
         title: venue.nombre,
         currency: 'PEN',
-        amount: Math.round(priceTotal * 100),
+        amount: held.payment_amount_cents,
       },
       client: { email },
       options: {
@@ -340,15 +368,15 @@ export default function VenuePublicPage() {
               <CheckCircle2 size={38} strokeWidth={2.5} />
             </div>
             <p className="text-base font-semibold text-pitch-400">
-              {venue.es_referencial ? 'Reserva de prueba creada' : 'Pago aprobado'}
+              {venue.es_referencial ? 'Reserva de prueba creada' : success.payment_status === 'pagado' ? 'Pago aprobado' : success.payment_status === 'rechazado' ? 'Pago rechazado' : 'Pago en verificación'}
             </p>
             <h1 className="mt-2 font-display text-4xl font-black leading-tight">
-              {venue.es_referencial ? '¡Tu horario quedó registrado!' : '¡Reserva confirmada!'}
+              {venue.es_referencial ? '¡Tu horario quedó registrado!' : success.payment_status === 'pagado' ? '¡Reserva confirmada!' : success.payment_status === 'rechazado' ? 'No se realizó la reserva' : 'Estamos verificando tu pago'}
             </h1>
             <p className="mt-4 text-white/75">
               {venue.es_referencial
                 ? `${nombre.split(' ')[0]}, puedes revisar todos los datos antes del partido.`
-                : `${nombre.split(' ')[0]}, pagaste la reserva completa con Yape y el horario ya es tuyo.`}
+                : success.payment_status === 'pagado' ? `${nombre.split(' ')[0]}, pagaste la reserva completa con Yape y el horario ya es tuyo.` : success.payment_status === 'rechazado' ? 'Yape rechazó el pago. Puedes elegir un horario e intentarlo de nuevo.' : 'El horario sigue protegido. No vuelvas a pagar; consulta el estado desde el enlace de tu reserva.'}
             </p>
           </div>
 
@@ -363,7 +391,7 @@ export default function VenuePublicPage() {
             />
             {!venue.es_referencial && (
               <ReservationDetail
-                label="Pago total"
+                label={success.payment_status === 'pagado' ? 'Pago total' : 'Importe de la solicitud'}
                 value={`S/ ${((success.payment_amount_cents ?? Math.round(priceTotal * 100)) / 100).toFixed(2)}`}
                 last
               />
@@ -371,11 +399,14 @@ export default function VenuePublicPage() {
           </section>
 
           <div className="mt-6 space-y-3">
+            <Link href={`/r/${success.cancel_token}`} className="btn-primary w-full">Consultar estado de mi reserva</Link>
             <Link href={player ? '/jugador' : '/jugador/login'} className="btn-accent w-full">
               <CalendarDays size={21} />
-              {player ? 'Ver mis reservas' : 'Entrar para guardar mi reserva'}
+              {player ? 'Ver mis reservas' : 'Entrar a mi cuenta'}
             </Link>
-            <Link href={`/c/${slug}`} className="btn-ghost w-full">Reservar otro horario</Link>
+            {['pagado', 'demo', 'rechazado'].includes(success.payment_status || '') && (
+              <a href={`/c/${slug}`} onClick={() => localStorage.removeItem(`fubito_checkout:${slug}`)} className="btn-ghost w-full">Reservar otro horario</a>
+            )}
           </div>
         </div>
       </main>
@@ -525,6 +556,7 @@ export default function VenuePublicPage() {
                   return (
                     <button
                       key={court.id}
+                      disabled={!!holdNotice}
                       onClick={() => setSelectedCourt(court)}
                       className={`flex min-h-16 items-center justify-between rounded-lg border px-4 py-3 text-left ${
                         active ? 'border-pitch-500 bg-pitch-100' : 'border-forest/15 bg-white'
@@ -551,6 +583,7 @@ export default function VenuePublicPage() {
                 return (
                   <button
                     key={date}
+                    disabled={!!holdNotice}
                     onClick={() => setFecha(date)}
                     className={`min-h-[92px] rounded-lg border p-3 text-center ${
                       active ? 'border-pitch-500 bg-pitch-400 text-forest' : 'border-forest/15 bg-white'
@@ -567,6 +600,7 @@ export default function VenuePublicPage() {
               <input
                 type="date"
                 min={todayISO()}
+                disabled={!!holdNotice}
                 value={fecha}
                 onChange={(event) => setFecha(event.target.value)}
                 className="input-field"
@@ -642,12 +676,20 @@ export default function VenuePublicPage() {
               </p>
             )}
 
+            {holdNotice && (
+              <div role="status" className="card mt-5 border-pitch-700">
+                <p className="font-semibold">Horario separado hasta las {new Date(holdNotice.hold_expires_at || '').toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="mt-2 text-sm">Continúa con Yape para completar el pago. Puedes consultar o liberar la separación desde tu enlace.</p>
+                <Link href={`/r/${holdNotice.cancel_token}`} className="link">Ver mi solicitud</Link>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="mt-7 space-y-6">
               <h3 className="font-display text-2xl font-black">Datos del comprador</h3>
               <div>
                 <label className="label-field">Tu nombre</label>
                 <input
                   required
+                  disabled={!!holdNotice}
                   value={nombre}
                   onChange={(event) => setNombre(event.target.value)}
                   placeholder="Ej. Diego Choque"
@@ -663,7 +705,8 @@ export default function VenuePublicPage() {
                     required
                     type="tel"
                     inputMode="numeric"
-                    value={whatsapp}
+                    disabled={!!holdNotice}
+                  value={whatsapp}
                     onChange={(event) => setWhatsapp(event.target.value)}
                     placeholder="987 654 321"
                     className={`input-field !pl-14 ${whatsapp && !isValidPeruvianWhatsApp(whatsapp) ? 'input-error' : ''}`}
@@ -683,7 +726,8 @@ export default function VenuePublicPage() {
                     type="email"
                     inputMode="email"
                     autoComplete="email"
-                    value={email}
+                    disabled={!!holdNotice}
+                  value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="tu@correo.com"
                     className="input-field !pl-12"

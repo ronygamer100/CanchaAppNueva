@@ -2,6 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
+  allowedDevOrigins: ['127.0.0.1'],
   images: { remotePatterns: [{ protocol: 'http', hostname: 'localhost' }] },
   async rewrites() {
     const apiUrl = (process.env.INTERNAL_API_URL || 'http://api:8000').replace(/\/+$/, '');

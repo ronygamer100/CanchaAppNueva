@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { apiFetch, clearToken, getToken, API_URL } from '@/lib/api';
+import { apiFetch, clearToken, getToken, API_URL, apiDownload } from '@/lib/api';
 import type { Venue, Court, Owner, Reservation, ReservationStatus } from '@/lib/types';
 import { Bell, ExternalLink } from 'lucide-react';
 import { FubitoMark } from '@/components/FubitoLogo';
@@ -456,6 +456,15 @@ function ReservationCard({
   onReject: () => void;
   onCancel?: () => void;
 }) {
+  async function verifyPayment() {
+    const chargeId = r.payment_id || prompt('Copia el ID del cargo de CulqiPanel (chr_test_... o chr_live_...). Verificaremos el importe, la reserva y las devoluciones con Culqi.');
+    if (!chargeId) return;
+    try {
+      await apiFetch(`/api/reservations/${r.id}/reconcile`, { method: 'POST', auth: true,
+        body: { charge_id: chargeId.trim() }, timeoutMs: 35000 });
+      window.location.reload();
+    } catch (err) { alert(err instanceof Error ? err.message : 'No se pudo verificar el cargo.'); }
+  }
   const info = courtMap.get(r.court_id);
   const yapeUrl = r.yape_screenshot_url
     ? (r.yape_screenshot_url.startsWith('http') ? r.yape_screenshot_url : `${API_URL}${r.yape_screenshot_url}`)
@@ -486,11 +495,12 @@ function ReservationCard({
               {r.estado}
             </span>
           )}
+          {!!r.payment_refunded_cents && <span className="text-xs">Devuelto S/ {(r.payment_refunded_cents / 100).toFixed(2)}</span>}
           {yapeUrl && (
-            <a href={yapeUrl} target="_blank"
+            <button onClick={() => void apiDownload(`/api/reservations/${r.id}/receipt`).catch((err) => alert(err.message))}
               className="border border-cream/30 px-2 py-1 text-[10px] font-mono hover:bg-cream/10">
-              Yape ↗
-            </a>
+              Ver comprobante
+            </button>
           )}
         </div>
       </div>
@@ -513,7 +523,11 @@ function ReservationCard({
 
         {/* Botones de acción — columna en móvil */}
         <div className="flex flex-col gap-1.5 shrink-0">
-          {r.estado === 'pendiente' ? (
+          {r.estado === 'pendiente' && ['procesando', 'verificacion'].includes(r.payment_status || '') ? (
+            <button className="btn-ghost !py-2 !px-3 text-xs" onClick={verifyPayment}>Verificar con Culqi</button>
+          ) : r.estado === 'pendiente' && r.payment_status === 'reservado' ? (
+            <span className="text-xs text-ink/60">Esperando pago</span>
+          ) : r.estado === 'pendiente' ? (
             <>
               <button onClick={onConfirm}
                 className="btn-accent !py-2 !px-3 text-xs whitespace-nowrap">
@@ -530,6 +544,7 @@ function ReservationCard({
               Cancelar
             </button>
           ) : null}
+          {r.payment_id && <button onClick={verifyPayment} className="btn-ghost !py-2 !px-3 text-xs">Actualizar pago / devolución</button>}
         </div>
       </div>
     </article>

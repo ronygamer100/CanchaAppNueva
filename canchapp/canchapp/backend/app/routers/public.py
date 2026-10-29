@@ -1,9 +1,9 @@
-from datetime import date
+from datetime import date, timezone
 from threading import Lock
 from time import monotonic
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.database import get_db
@@ -18,17 +18,11 @@ from app.schemas import (
     DayAvailability,
     ReservationCreatedOut,
     ReservationPaymentCreate,
+    PaymentSubmit,
     ReservationPublicOut,
 )
-from app.services.availability import get_day_availability, slot_is_available
+from app.services.availability import get_day_availability
 from app.services.auto_confirm import sweep_auto_confirms
-from app.services.credential_crypto import decrypt_secret
-from app.services.culqi import (
-    CulqiPaymentRejected,
-    CulqiPaymentUncertain,
-    create_yape_charge,
-)
-from app.services.payments import calculate_full_payment_cents
 from app.core.deps import get_optional_player
 from app.models.player import Player
 
@@ -49,6 +43,8 @@ def list_venues_public(
     ordenar: str = Query("recientes", pattern="^(recientes|precio_asc|precio_desc|nombre)$"),
 ):
     """Catálogo público con filtros opcionales."""
+    if disponible_hoy:
+        sweep_auto_confirms(db)
     cache_key = "|".join([
         q or "", distrito or "", str(precio_max) if precio_max is not None else "",
         amenities or "", str(disponible_hoy), ordenar,
@@ -108,7 +104,7 @@ def list_venues_public(
             tiene_libre = False
             for c in canchas_activas:
                 slots = get_day_availability(db, c, today_peru())
-                if any(s.disponible for s in slots):
+                if any(s.estado == "libre" for s in slots):
                     tiene_libre = True
                     break
             if not tiene_libre:
@@ -213,7 +209,7 @@ def get_availability(
 ):
     court = (
         db.query(Court).join(Venue)
-        .filter(Court.id == court_id, Venue.slug == slug)
+        .filter(Court.id == court_id, Venue.slug == slug, Court.activa == 1)
         .first()
     )
     if not court:
@@ -223,7 +219,7 @@ def get_availability(
             status_code=403,
             detail="Esta ficha es referencial y todavía no acepta reservas en fubito",
         )
-    # Aplica auto-confirmaciones vencidas antes de calcular slots
+    # Expira únicamente separaciones sin pago iniciado.
     sweep_auto_confirms(db, owner_id=court.venue.owner_id)
     slots = get_day_availability(db, court, fecha)
     return DayAvailability(fecha=fecha, slots=slots)
@@ -237,136 +233,26 @@ def create_reservation(
     slug: str,
     court_id: int,
     data: ReservationPaymentCreate,
+    response: Response,
     db: Session = Depends(get_db),
     player: Optional[Player] = Depends(get_optional_player),
 ):
-    court = (
-        db.query(Court)
-        .filter(Court.id == court_id, Court.activa == 1)
-        .with_for_update()
-        .first()
-    )
-    if not court or court.venue.slug != slug:
-        raise HTTPException(status_code=404, detail="Cancha no encontrada")
-    if not court.venue.reservas_habilitadas:
-        raise HTTPException(
-            status_code=403,
-            detail="Esta ficha es referencial y todavía no acepta reservas en fubito",
-        )
+    from app.services.reservation_checkout import prepare_checkout, pay_checkout, checkout_result
+    item = prepare_checkout(db, slug, court_id, data, player)
+    if data.culqi_token and item.payment_provider != "demo":
+        item = pay_checkout(db, item.cancel_token, data.culqi_token)
+    if item.payment_status in {"procesando", "verificacion"}:
+        response.status_code = 202
+    return checkout_result(item)
 
-    if data.fecha < today_peru():
-        raise HTTPException(status_code=400, detail="La fecha no puede ser pasada")
 
-    if not slot_is_available(db, court, data.fecha, data.hora_inicio, data.hora_fin):
-        raise HTTPException(status_code=409, detail="El horario ya no está disponible")
-
-    from datetime import datetime as _dt
-    amount_cents = calculate_full_payment_cents(
-        court.precio_hora,
-        data.fecha,
-        data.hora_inicio,
-        data.hora_fin,
-    )
-    is_demo = court.venue.es_referencial
-
-    secret_key = None
-    if not is_demo:
-        owner = court.venue.owner
-        if not owner.culqi_public_key or not owner.culqi_secret_key_encrypted:
-            raise HTTPException(
-                status_code=409,
-                detail="Este local todavía no ha conectado sus cobros por Yape.",
-            )
-        if not data.culqi_token:
-            raise HTTPException(status_code=400, detail="Falta autorizar el pago con Yape")
-        expected_prefix = f"ype_{owner.culqi_mode}_"
-        if not data.culqi_token.startswith(expected_prefix):
-            raise HTTPException(
-                status_code=400,
-                detail="El pago y las llaves de Culqi pertenecen a ambientes distintos.",
-            )
-        if amount_cents <= 0 or amount_cents > 200000:
-            raise HTTPException(
-                status_code=400,
-                detail="El monto a pagar con Yape debe estar entre S/0.01 y S/2000.",
-            )
-        try:
-            secret_key = decrypt_secret(owner.culqi_secret_key_encrypted)
-        except ValueError as exc:
-            raise HTTPException(
-                status_code=503,
-                detail="El local debe volver a conectar su cuenta Culqi.",
-            ) from exc
-
-    reserva = Reservation(
-        court_id=court.id,
-        fecha=data.fecha,
-        hora_inicio=data.hora_inicio,
-        hora_fin=data.hora_fin,
-        jugador_nombre=data.jugador_nombre.strip(),
-        jugador_whatsapp=data.jugador_whatsapp.strip(),
-        jugador_email=str(data.jugador_email).lower(),
-        estado=ReservationStatus.CONFIRMADA if is_demo else ReservationStatus.PENDIENTE,
-        auto_confirm_at=None,
-        player_id=player.id if player else None,
-        payment_provider="demo" if is_demo else "culqi_yape",
-        payment_status="demo" if is_demo else "procesando",
-        payment_amount_cents=0 if is_demo else amount_cents,
-        payment_currency="PEN",
-    )
-    db.add(reserva)
-
-    # Si está logueado y aún no tiene whatsapp en perfil, guardarlo
-    if player and not player.whatsapp:
-        player.whatsapp = data.jugador_whatsapp.strip()
-
-    db.commit()
-    db.refresh(reserva)
-
-    if not is_demo and secret_key and data.culqi_token:
-        try:
-            charge = create_yape_charge(
-                secret_key=secret_key,
-                token=data.culqi_token,
-                amount_cents=amount_cents,
-                email=str(data.jugador_email).lower(),
-                customer_name=data.jugador_nombre,
-                customer_phone=data.jugador_whatsapp,
-                reservation_id=reserva.id,
-                venue_name=court.venue.nombre,
-            )
-        except CulqiPaymentRejected as exc:
-            reserva.estado = ReservationStatus.RECHAZADA
-            reserva.payment_status = "rechazado"
-            db.commit()
-            raise HTTPException(status_code=402, detail=str(exc)) from exc
-        except CulqiPaymentUncertain as exc:
-            reserva.payment_status = "verificacion"
-            db.commit()
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-        reserva.estado = ReservationStatus.CONFIRMADA
-        reserva.payment_status = "pagado"
-        reserva.payment_id = charge.charge_id
-        reserva.payment_amount_cents = charge.amount_cents
-        reserva.payment_currency = charge.currency
-        reserva.payment_paid_at = _dt.utcnow()
-        db.commit()
-        db.refresh(reserva)
-
-    cancel_url = f"{app_settings.FRONTEND_URL}/r/{reserva.cancel_token}"
-    return ReservationCreatedOut(
-        id=reserva.id,
-        fecha=reserva.fecha,
-        hora_inicio=reserva.hora_inicio,
-        hora_fin=reserva.hora_fin,
-        cancel_token=reserva.cancel_token,
-        cancel_url=cancel_url,
-        auto_confirm_at=None,
-        modo_confirmacion=court.venue.modo_confirmacion,
-        payment_status=reserva.payment_status,
-        payment_amount_cents=reserva.payment_amount_cents,
-    )
+@router.post("/reservations/{token}/pay", response_model=ReservationCreatedOut)
+def pay_reservation(token: str, data: PaymentSubmit, response: Response, db: Session = Depends(get_db)):
+    from app.services.reservation_checkout import pay_checkout, checkout_result
+    item = pay_checkout(db, token, data.culqi_token)
+    if item.payment_status in {"procesando", "verificacion"}:
+        response.status_code = 202
+    return checkout_result(item)
 
 
 # ---- Vista / cancelación pública de la reserva ----
@@ -375,16 +261,9 @@ def _reservation_public(reserva: Reservation) -> ReservationPublicOut:
     inicio = dt.combine(reserva.fecha, reserva.hora_inicio)
     fin = dt.combine(reserva.fecha, reserva.hora_fin)
     horas = int((fin - inicio).total_seconds() // 3600)
-    monto_total = round(reserva.court.precio_hora * horas, 2)
-    if reserva.payment_provider == "demo":
-        monto_pagado = 0.0
-    elif reserva.payment_status == "pagado" and reserva.payment_amount_cents is not None:
-        monto_pagado = round(reserva.payment_amount_cents / 100, 2)
-    elif reserva.payment_status in {"rechazado", "procesando", "verificacion"}:
-        monto_pagado = 0.0
-    else:
-        # Reservas históricas anteriores a Culqi solo guardaban el adelanto.
-        monto_pagado = round(reserva.court.adelanto_monto * horas, 2)
+    from app.services.payments import reservation_total, reservation_paid
+    monto_total = reservation_total(reserva)
+    monto_pagado = reservation_paid(reserva)
 
     return ReservationPublicOut(
         id=reserva.id,
@@ -400,6 +279,9 @@ def _reservation_public(reserva: Reservation) -> ReservationPublicOut:
         monto_total=monto_total,
         monto_pagado=monto_pagado,
         payment_status=reserva.payment_status,
+        hold_expires_at=reserva.hold_expires_at.replace(tzinfo=timezone.utc) if reserva.hold_expires_at else None,
+        venue_slug=reserva.court.venue.slug,
+        quote_source=reserva.quote_source,
         adelanto_monto=monto_pagado,
         horas=horas,
     )
@@ -410,7 +292,7 @@ def get_reservation_public(token: str, db: Session = Depends(get_db)):
     reserva = db.query(Reservation).filter(Reservation.cancel_token == token).first()
     if not reserva:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
-    # Si vencido el auto-confirm, marcarla como confirmada antes de devolver
+    # Actualiza vencimientos sin volver a cobrar ni aprobar pagos por tiempo.
     sweep_auto_confirms(db, owner_id=reserva.court.venue.owner_id)
     db.refresh(reserva)
     return _reservation_public(reserva)
@@ -418,19 +300,21 @@ def get_reservation_public(token: str, db: Session = Depends(get_db)):
 
 @router.post("/reservations/{token}/cancel", response_model=ReservationPublicOut)
 def cancel_reservation_public(token: str, db: Session = Depends(get_db)):
-    reserva = db.query(Reservation).filter(Reservation.cancel_token == token).first()
-    if not reserva:
-        raise HTTPException(status_code=404, detail="Reserva no encontrada")
-    if reserva.estado in (ReservationStatus.CANCELADA, ReservationStatus.RECHAZADA):
-        raise HTTPException(status_code=400, detail=f"La reserva ya está {reserva.estado.value}")
-
+    from app.services.reservation_checkout import locked_reservation
+    from app.services.booking_integrity import change_status
+    reserva = locked_reservation(db, token)
+    if reserva.estado == ReservationStatus.CANCELADA:
+        db.commit()
+        return _reservation_public(reserva)
+    if reserva.payment_status in {"procesando", "verificacion"}:
+        raise HTTPException(409, "El pago está en verificación. No repitas el pago ni liberes el horario.")
     from datetime import datetime as dt
     inicio_reserva = dt.combine(reserva.fecha, reserva.hora_inicio)
     horas_restantes = (inicio_reserva - now_peru()).total_seconds() / 3600
-    if horas_restantes < 2:
+    if horas_restantes < 2 and reserva.payment_status != "reservado":
         raise HTTPException(status_code=400, detail="No se puede cancelar a menos de 2 horas del inicio.")
 
-    reserva.estado = ReservationStatus.CANCELADA
+    change_status(db, reserva, ReservationStatus.CANCELADA)
     db.commit()
     db.refresh(reserva)
     return _reservation_public(reserva)

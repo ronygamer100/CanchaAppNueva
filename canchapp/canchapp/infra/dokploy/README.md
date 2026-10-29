@@ -3,8 +3,8 @@
 ## Configuración de Dokploy
 
 1. Cree un servicio **Compose** conectado al repositorio.
-2. Use la rama `main`.
-3. Configure **Compose Path** como `infra/dokploy/docker-compose.yml`.
+2. Use la rama `codex/fubito-dokploy-production`.
+3. Configure **Compose Path** como `./canchapp/canchapp/infra/dokploy/docker-compose.yml` desde la raíz del repositorio GitHub.
 4. Copie todas las variables de `.env.example` a **Environment** y reemplace los valores `CAMBIAR_*`.
 5. Despliegue una vez. Los servicios `db`, `api` y `frontend` deben quedar `healthy`.
 6. En **Domains**, agregue el dominio al servicio `frontend`, puerto `3000`, path `/`, con HTTPS habilitado.

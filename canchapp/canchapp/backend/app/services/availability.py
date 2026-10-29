@@ -7,6 +7,7 @@ from app.models.court import Court
 from app.models.reservation import Reservation, ReservationStatus
 from app.models.blocked_slot import BlockedSlot
 from app.schemas import SlotInfo
+from app.core.timezone import now_peru
 
 
 def _time_to_minutes(t: time) -> int:
@@ -63,6 +64,9 @@ def get_day_availability(
     result: List[SlotInfo] = []
     for h1, h2 in raw_slots:
         estado = "libre"
+        if datetime.combine(fecha, h1) <= now_peru():
+            result.append(SlotInfo(hora_inicio=h1, hora_fin=h2, estado="bloqueado"))
+            continue
         # Prioridad: bloqueado > confirmada > pendiente > libre
         if any(_overlaps(h1, h2, b.hora_inicio, b.hora_fin) for b in bloqueos):
             estado = "bloqueado"
@@ -88,6 +92,10 @@ def slot_is_available(
     db: Session, court: Court, fecha: date, hora_inicio: time, hora_fin: time
 ) -> bool:
     """Verifica si un rango horario está libre (sin reservas activas ni bloqueos)."""
+    if datetime.combine(fecha, hora_inicio) <= now_peru():
+        return False
+    if hora_inicio.tzinfo or hora_fin.tzinfo or hora_inicio.second or hora_fin.second:
+        return False
     venue_apertura = court.venue.hora_apertura
     venue_cierre = court.venue.hora_cierre
 
@@ -97,6 +105,12 @@ def slot_is_available(
     if _time_to_minutes(hora_fin) > _time_to_minutes(venue_cierre):
         return False
     if _time_to_minutes(hora_inicio) >= _time_to_minutes(hora_fin):
+        return False
+
+    # Match the one-hour slots actually offered by the venue.
+    if (_time_to_minutes(hora_inicio) - _time_to_minutes(venue_apertura)) % 60:
+        return False
+    if (_time_to_minutes(hora_fin) - _time_to_minutes(hora_inicio)) % 60:
         return False
 
     # No debe solapar con reservas activas

@@ -82,6 +82,15 @@ def delete_venue(
     ).first()
     if not venue:
         raise HTTPException(status_code=404, detail="Negocio no encontrado")
+    from app.models.reservation import Reservation
+    from app.models.court import Court
+    from app.services.booking_integrity import lock_court
+    court_ids = db.query(Court.id).filter(Court.venue_id == venue.id).order_by(Court.id).all()
+    for row in court_ids:
+        lock_court(db, row[0])
+    history = db.query(Reservation.id).join(Court).filter(Court.venue_id == venue.id).first()
+    if history:
+        raise HTTPException(409, "Hay reservas en el historial. Desactiva las canchas para conservar los pagos.")
     db.delete(venue)
     db.commit()
 

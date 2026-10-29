@@ -35,7 +35,15 @@ class Reservation(Base):
     payment_id = Column(String(120), nullable=True, unique=True, index=True)
     payment_amount_cents = Column(Integer, nullable=True)
     payment_currency = Column(String(3), nullable=True)
+    payment_refunded_cents = Column(Integer, nullable=False, default=0, server_default="0")
+    terms_accepted_at = Column(DateTime, nullable=True)
     payment_paid_at = Column(DateTime, nullable=True)
+    request_key = Column(String(36), nullable=True, unique=True)
+    payment_source_hash = Column(String(64), nullable=True, unique=True)
+    quoted_total_cents = Column(Integer, nullable=True)
+    quote_source = Column(String(30), nullable=True)
+    hold_expires_at = Column(DateTime, nullable=True, index=True)
+    payment_started_at = Column(DateTime, nullable=True)
     estado = Column(
         Enum(ReservationStatus, name="reservation_status"),
         default=ReservationStatus.PENDIENTE,

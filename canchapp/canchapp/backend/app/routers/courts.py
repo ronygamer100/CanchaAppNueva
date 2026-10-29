@@ -98,5 +98,12 @@ def delete_court(
     ).first()
     if not court:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    from app.models.reservation import Reservation
+    from app.models.court import Court
+    from app.services.booking_integrity import lock_court
+    lock_court(db, court.id)
+    history = db.query(Reservation.id).filter(Reservation.court_id == court.id).first()
+    if history:
+        raise HTTPException(409, "Hay reservas en el historial. Desactiva las canchas para conservar los pagos.")
     db.delete(court)
     db.commit()

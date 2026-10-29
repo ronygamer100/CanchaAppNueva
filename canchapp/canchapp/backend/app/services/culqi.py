@@ -12,6 +12,7 @@ class CulqiChargeResult:
     amount_cents: int
     currency: str
     response_code: str | None = None
+    refunded_cents: int = 0
 
 
 class CulqiPaymentRejected(Exception):
@@ -20,6 +21,46 @@ class CulqiPaymentRejected(Exception):
 
 class CulqiPaymentUncertain(Exception):
     pass
+
+
+def verified_charge(data: dict, amount_cents: int, reservation_id: int | None = None, *, allow_refunds=False) -> CulqiChargeResult:
+    """Fail closed: an HTTP 201 or an id alone does not prove the expected payment."""
+    if not isinstance(data, dict):
+        raise CulqiPaymentUncertain("Respuesta incompleta de Culqi. No repitas el pago.")
+    outcome = data.get("outcome") or {}
+    try:
+        correct_amount = int(data.get("amount", -1)) == amount_cents
+    except (TypeError, ValueError):
+        correct_amount = False
+    try:
+        refunded = int(data.get("amount_refunded") or 0)
+    except (TypeError, ValueError) as exc:
+        raise CulqiPaymentUncertain("Importe de devolución inválido en Culqi.") from exc
+    if (not str(data.get("id", "")).startswith("chr_") or not correct_amount
+            or (data.get("currency_code") or data.get("currency")) != "PEN"
+            or data.get("capture") is not True
+            or not isinstance(outcome, dict) or outcome.get("type") != "venta_exitosa"
+            or refunded < 0 or refunded > amount_cents
+            or (data.get("refunded") is True and refunded == 0)
+            or (not allow_refunds and refunded > 0)):
+        raise CulqiPaymentUncertain("El pago necesita verificación en Culqi. No repitas el pago.")
+    if reservation_id is not None and str((data.get("metadata") or {}).get("fubito_reservation_id")) != str(reservation_id):
+        raise CulqiPaymentUncertain("El cargo de Culqi no corresponde a esta reserva.")
+    return CulqiChargeResult(data["id"], amount_cents, "PEN", data.get("response_code"), refunded)
+
+
+def retrieve_charge(*, secret_key: str, charge_id: str, amount_cents: int, reservation_id: int):
+    try:
+        response = requests.get(f"{CULQI_CHARGES_URL}/{charge_id}",
+                                headers={"Authorization": f"Bearer {secret_key}"}, timeout=25)
+        if response.status_code != 200:
+            raise CulqiPaymentUncertain("No se pudo verificar el cargo en Culqi.")
+        data = response.json()
+        if not isinstance(data, dict) or data.get("id") != charge_id:
+            raise CulqiPaymentUncertain("El cargo devuelto no coincide con el solicitado.")
+        return verified_charge(data, amount_cents, reservation_id, allow_refunds=True)
+    except (requests.RequestException, ValueError) as exc:
+        raise CulqiPaymentUncertain("Culqi no respondió. La reserva sigue en verificación.") from exc
 
 
 def create_yape_charge(
@@ -39,6 +80,7 @@ def create_yape_charge(
         "currency_code": "PEN",
         "email": email,
         "source_id": token,
+        "capture": True,
         "description": f"Pago total de reserva en {venue_name}"[:80],
         "antifraud_details": {
             "country_code": "PE",
@@ -77,7 +119,11 @@ def create_yape_charge(
     except ValueError:
         data = {}
 
+    if response.status_code >= 500 or response.status_code in (408, 409, 429):
+        raise CulqiPaymentUncertain("Culqi no confirmó el resultado. No repitas el pago.")
     if response.status_code not in (200, 201):
+        if not isinstance(data, dict) or data.get("object") != "error":
+            raise CulqiPaymentUncertain("Respuesta incompleta de Culqi. No repitas el pago.")
         message = (
             data.get("user_message")
             or data.get("merchant_message")
@@ -86,15 +132,4 @@ def create_yape_charge(
         )
         raise CulqiPaymentRejected(message)
 
-    charge_id = data.get("id")
-    if not charge_id:
-        raise CulqiPaymentUncertain(
-            "Culqi aprobó la solicitud sin devolver una confirmación completa. No repitas el pago."
-        )
-
-    return CulqiChargeResult(
-        charge_id=charge_id,
-        amount_cents=int(data.get("amount") or amount_cents),
-        currency=data.get("currency") or data.get("currency_code") or "PEN",
-        response_code=data.get("response_code"),
-    )
+    return verified_charge(data, amount_cents, reservation_id)

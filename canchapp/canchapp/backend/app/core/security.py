@@ -2,7 +2,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Literal
 
 import bcrypt
-from jose import jwt, JWTError
+import jwt
+from jwt import InvalidTokenError
 
 from app.core.config import settings
 
@@ -45,5 +46,5 @@ def decode_token(token: str) -> Optional[dict]:
             "id": int(payload["sub"]),
             "kind": payload.get("kind", "owner"),
         }
-    except (JWTError, ValueError, KeyError):
+    except (InvalidTokenError, ValueError, KeyError):
         return None

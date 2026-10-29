@@ -6,7 +6,8 @@
     "dev": "next dev --port 3010",
     "build": "next build",
     "start": "next start",
-    "check": "tsc --noEmit --incremental false"
+    "check": "tsc --noEmit --incremental false",
+    "test:checkout": "playwright test"
   },
   "dependencies": {
     "lucide-react": "^1.33.0",
@@ -15,6 +16,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/node": "^20",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

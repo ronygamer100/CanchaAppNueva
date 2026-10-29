@@ -180,7 +180,7 @@ export default function MetricasPage() {
           <KpiCard
             label={period === 'month' ? 'Ingresos del mes' : 'Ingresos de la semana'}
             value={`S/ ${k.ingresos_mes.toFixed(2)}`}
-            sub="Solo reservas confirmadas"
+            sub="Pagos verificados, menos devoluciones registradas"
             color="pitch"
             big
           />

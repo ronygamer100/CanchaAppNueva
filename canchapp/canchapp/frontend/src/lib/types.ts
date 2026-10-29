@@ -102,6 +102,7 @@ export interface Reservation {
   payment_amount_cents?: number | null;
   payment_currency?: string | null;
   payment_paid_at?: string | null;
+  payment_refunded_cents?: number;
   estado: ReservationStatus;
   notas_dueno?: string | null;
   cancel_token?: string | null;
@@ -115,6 +116,8 @@ export interface ReservationCreated {
   hora_fin: string;
   cancel_token: string;
   cancel_url: string;
+  estado: ReservationStatus;
+  hold_expires_at?: string | null;
   auto_confirm_at?: string | null;
   modo_confirmacion: 'manual' | 'auto';
   payment_status?: string | null;
@@ -142,6 +145,9 @@ export interface ReservationPublic {
   direccion: string;
   monto_total: number;
   monto_pagado: number;
+  hold_expires_at?: string | null;
+  venue_slug: string;
+  quote_source?: string | null;
   payment_status?: string | null;
   adelanto_monto?: number;
   horas: number;

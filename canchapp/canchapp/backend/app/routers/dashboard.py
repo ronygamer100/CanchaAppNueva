@@ -1,3 +1,4 @@
+from app.services.payments import reservation_paid, reservation_total
 from datetime import date, datetime, timedelta, time
 from app.core.timezone import today_peru, now_peru
 from typing import List, Optional, Literal
@@ -8,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from app.core.database import get_db
 from app.core.deps import get_current_owner
@@ -90,14 +91,7 @@ def _horas_reserva(r: Reservation) -> int:
 
 
 def _monto_pagado(r: Reservation, court: Court) -> float:
-    if r.payment_status == "pagado" and r.payment_amount_cents is not None:
-        return round(r.payment_amount_cents / 100, 2)
-    if r.payment_provider == "demo" or r.payment_status in {
-        "rechazado", "procesando", "verificacion",
-    }:
-        return 0.0
-    # Reservas históricas anteriores a Culqi no guardaban el importe pagado.
-    return round(court.precio_hora * _horas_reserva(r), 2)
+    return reservation_paid(r)
 
 
 def _monday_of(d: date) -> date:
@@ -140,7 +134,8 @@ def _build_metrics(
             Court.venue_id == venue.id,
             Reservation.fecha >= first_day,
             Reservation.fecha <= last_day,
-            Reservation.estado == ReservationStatus.CONFIRMADA,
+            or_(Reservation.estado == ReservationStatus.CONFIRMADA,
+                Reservation.payment_status.in_(["pagado", "reembolsado"])),
         )
         .all()
     )
@@ -173,6 +168,8 @@ def _build_metrics(
         ingresos_por_dia[r.fecha] += monto
         ingresos_por_cancha[court.id] += monto
         total_ingresos += monto
+        if r.estado != ReservationStatus.CONFIRMADA:
+            continue
         total_horas_reservadas += horas
         for h in range(r.hora_inicio.hour, r.hora_fin.hour):
             ocupacion_por_hora[h] += 1
@@ -390,7 +387,7 @@ def export_metrics_xlsx(
     headers = [
         "Fecha", "Hora inicio", "Hora fin", "Horas",
         "Cancha", "Jugador", "WhatsApp", "Estado",
-        "Monto total (S/)", "Pago recibido (S/)", "Creada el",
+        "Monto total (S/)", "Pago neto verificado (S/)", "Creada el", "Origen del importe", "Estado del pago", "Reembolsado (S/)",
     ]
     for col, h in enumerate(headers, start=1):
         cell = ws2.cell(row=1, column=col, value=h)
@@ -400,7 +397,7 @@ def export_metrics_xlsx(
 
     for i, (r, court) in enumerate(todas, start=2):
         horas = _horas_reserva(r)
-        monto = court.precio_hora * horas
+        monto = reservation_total(r)
         pago_recibido = _monto_pagado(r, court)
         ws2.cell(row=i, column=1, value=r.fecha.strftime("%d/%m/%Y"))
         ws2.cell(row=i, column=2, value=r.hora_inicio.strftime("%H:%M"))
@@ -413,6 +410,10 @@ def export_metrics_xlsx(
         ws2.cell(row=i, column=9, value=monto).number_format = '"S/ "#,##0.00'
         ws2.cell(row=i, column=10, value=pago_recibido).number_format = '"S/ "#,##0.00'
         ws2.cell(row=i, column=11, value=r.created_at.strftime("%d/%m/%Y %H:%M"))
+
+        ws2.cell(row=i, column=12, value=r.quote_source or "legacy_estimated")
+        ws2.cell(row=i, column=13, value=r.payment_status or "sin_verificar")
+        ws2.cell(row=i, column=14, value=(r.payment_refunded_cents or 0) / 100)
 
         # Color de fila según estado
         if r.estado == ReservationStatus.CONFIRMADA:
@@ -427,17 +428,17 @@ def export_metrics_xlsx(
             ws2.cell(row=i, column=col).fill = fill
 
     # Anchos
-    widths = [12, 10, 10, 6, 16, 22, 16, 12, 16, 14, 18]
+    widths = [12, 10, 10, 6, 16, 22, 16, 12, 16, 14, 18, 22, 20, 18]
     for i, w in enumerate(widths, start=1):
         ws2.column_dimensions[chr(64 + i)].width = w
 
     # Total al final
     if todas:
         total_row = len(todas) + 2
-        ws2.cell(row=total_row + 1, column=8, value="TOTAL CONFIRMADAS").font = bold
+        ws2.cell(row=total_row + 1, column=8, value="TOTAL COBRADO NETO").font = bold
         total_confirmadas = sum(
             _monto_pagado(r, court)
-            for r, court in todas if r.estado == ReservationStatus.CONFIRMADA
+            for r, court in todas
         )
         ws2.cell(row=total_row + 1, column=10, value=total_confirmadas).number_format = '"S/ "#,##0.00'
         ws2.cell(row=total_row + 1, column=10).font = bold

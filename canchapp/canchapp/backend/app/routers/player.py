@@ -1,3 +1,4 @@
+from app.services.payments import reservation_total
 """Endpoints del JUGADOR autenticado."""
 from datetime import date, datetime
 from typing import List, Optional
@@ -110,7 +111,7 @@ def list_my_reservations(
             estado=r.estado,
             cancel_token=r.cancel_token,
             horas=horas,
-            monto_total=round(court.precio_hora * horas, 2),
+            monto_total=reservation_total(r),
             venue_nombre=venue.nombre,
             venue_slug=venue.slug,
             court_nombre=court.nombre,

@@ -1,6 +1,7 @@
 from datetime import date, time, datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, ConfigDict, Field
+from uuid import UUID
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, model_validator
 
 from app.models.reservation import ReservationStatus
 
@@ -163,10 +164,31 @@ class ReservationCreate(BaseModel):
     jugador_nombre: str = Field(min_length=2, max_length=120)
     jugador_whatsapp: str = Field(pattern=r"^\+519\d{8}$")
 
+    @model_validator(mode="after")
+    def valid_time_range(self):
+        if not self.jugador_nombre.strip() or len(self.jugador_nombre.strip()) < 2:
+            raise ValueError("Nombre inválido")
+        if any(t.tzinfo is not None or t.second or t.microsecond for t in (self.hora_inicio, self.hora_fin)):
+            raise ValueError("Usa horas locales HH:MM")
+        if self.hora_fin <= self.hora_inicio:
+            raise ValueError("La hora final debe ser posterior al inicio")
+        return self
+
 
 class ReservationPaymentCreate(ReservationCreate):
     jugador_email: EmailStr
     culqi_token: Optional[str] = Field(default=None, min_length=16, max_length=255)
+    request_key: Optional[UUID] = None
+    expected_total_cents: Optional[int] = Field(default=None, gt=0)
+    terms_accepted: bool = False
+
+
+class PaymentSubmit(BaseModel):
+    culqi_token: str = Field(min_length=16, max_length=255)
+
+
+class PaymentReconcile(BaseModel):
+    charge_id: str = Field(pattern=r"^chr_(test|live)_[A-Za-z0-9]+$", max_length=120)
 
 
 class ReservationOut(BaseModel):
@@ -186,6 +208,9 @@ class ReservationOut(BaseModel):
     payment_amount_cents: Optional[int] = None
     payment_currency: Optional[str] = None
     payment_paid_at: Optional[datetime] = None
+    payment_refunded_cents: int = 0
+    quote_source: Optional[str] = None
+    quoted_total_cents: Optional[int] = None
     estado: ReservationStatus
     notas_dueno: Optional[str] = None
     cancel_token: Optional[str] = None
@@ -204,6 +229,8 @@ class ReservationCreatedOut(BaseModel):
     modo_confirmacion: str  # "manual" | "auto"
     payment_status: Optional[str] = None
     payment_amount_cents: Optional[int] = None
+    hold_expires_at: Optional[datetime] = None
+    estado: ReservationStatus
 
 
 class ReservationPublicOut(BaseModel):
@@ -221,6 +248,9 @@ class ReservationPublicOut(BaseModel):
     monto_total: float
     monto_pagado: float
     payment_status: Optional[str] = None
+    hold_expires_at: Optional[datetime] = None
+    venue_slug: str
+    quote_source: Optional[str] = None
 
     # Compatibilidad con versiones anteriores del frontend.
     adelanto_monto: float

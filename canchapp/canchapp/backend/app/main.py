@@ -10,6 +10,7 @@ import sys
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.models import Owner, Venue, Court, Reservation, BlockedSlot, Complaint  # noqa: F401
+from app.models.payment_event import PaymentEvent  # noqa: F401
 from app.models.player import Player  # noqa: F401
 from app.routers import auth, venues, courts, reservations, public, dashboard, player, billing, complaints
 
@@ -265,6 +266,8 @@ def _check_and_migrate():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _check_and_migrate()
+    from app.services.booking_migration import migrate_booking_integrity
+    migrate_booking_integrity(engine)
     if settings.SEED_AREQUIPA_CATALOG:
         from app.services.catalog_seed import seed_arequipa_catalog
         seed_arequipa_catalog()
@@ -294,7 +297,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+from app.services.private_uploads import PublicUploads
+app.mount("/uploads", PublicUploads(directory=settings.UPLOAD_DIR, check_dir=False), name="uploads")
 
 app.include_router(auth.router)
 app.include_router(venues.router)
@@ -315,4 +319,4 @@ def root():
 @app.get("/health", include_in_schema=False)
 @app.get("/api/health", tags=["health"])
 def health():
-    return {"status": "healthy"}
+    return {"status": "healthy", "booking_integrity": 1}
